@@ -9,7 +9,8 @@
 /* ═══════════════════════════════════════════ RESET */
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
-body { font-family:'Inter',sans-serif; background:#111827; min-height:100vh; }
+html { overflow-x:hidden; }
+body { font-family:'Inter',sans-serif; background:#111827; min-height:100vh; overflow-x:hidden; }
 
 /* ═══════════════════════════════════════════ TOOLBAR */
 #toolbar {
@@ -50,6 +51,13 @@ body { font-family:'Inter',sans-serif; background:#111827; min-height:100vh; }
 /* ═══════════════════════════════════════════ MAIN LAYOUT */
 #main-layout {
   display:flex; justify-content:center; padding:22px 16px 40px; gap:18px; align-items:flex-start;
+}
+
+#catalogue-stage {
+  width:794px;
+  height:1123px;
+  flex-shrink:0;
+  max-width:100%;
 }
 
 /* ═══════════════════════════════════════════ EDITOR SIDEBAR */
@@ -132,6 +140,7 @@ body.edit-mode #editor-panel { display:flex; }
   box-shadow:0 20px 80px rgba(0,0,0,0.5);
   overflow:hidden; border-radius:3px;
   display:flex; flex-direction:column;
+  transform-origin:top left;
 }
 
 /* ═══════════════════════════════════════════ HERO */
@@ -192,6 +201,7 @@ body.edit-mode #heroChangBtn { display:block; }
 /* ═══════════════════════════════════════════ HERO ELEMENT WRAPPER */
 .hero-el {
   position:absolute; z-index:10; user-select:none;
+  touch-action:none;
 }
 body.edit-mode .hero-el {
   cursor:move;
@@ -367,13 +377,67 @@ body.edit-mode [contenteditable="true"]:focus {
   outline:2px solid #60a5fa; background:rgba(96,165,250,.08); border-radius:3px;
 }
 
+/* ═══════════════════════════════════════════ MOBILE RESPONSIVE */
+@media (max-width: 1050px) {
+  #main-layout { flex-direction: column; align-items: center; padding: 16px; gap:24px; }
+  #editor-panel { width: 100%; max-width: 794px; position: static; flex-direction: row; flex-wrap: wrap; justify-content: center; }
+  #editor-panel .ep-card { flex: 1; min-width: 220px; }
+}
+
+@media (max-width: 830px) {
+  #toolbar { height:auto; min-height:52px; flex-wrap: wrap; padding:10px; gap:8px; justify-content:center; }
+  .tb-brand { width:100%; justify-content:center; margin-right:0; }
+  .tb-divider { display:none; }
+  .tb-btn { flex:1 1 145px; justify-content:center; min-height:36px; }
+  .tb-dl { margin-left:0; }
+  #tb-hint { display:none; }
+
+  #main-layout { 
+    display:flex;
+    align-items:center;
+    padding: 10px;
+    gap:14px;
+    overflow-x: hidden;
+  }
+
+  #editor-panel {
+    max-width:100%;
+    gap:8px;
+  }
+
+  #editor-panel .ep-card {
+    min-width:min(100%, 220px);
+  }
+
+  #catalogue-stage {
+    width:calc(100vw - 20px);
+    height:calc(1123px * var(--catalogue-scale, 1));
+    max-width:794px;
+    overflow:visible;
+  }
+
+  #catalogue {
+    transform:scale(var(--catalogue-scale, 1));
+    box-shadow:0 12px 40px rgba(0,0,0,0.42);
+  }
+}
+
+@media (max-width: 440px) {
+  .tb-brand-text h2 { font-size:12px; }
+  .tb-brand-text p { display:none; }
+  .tb-btn { flex-basis:100%; }
+  .ep-card { border-radius:8px; }
+  #layersList { max-height:130px; }
+}
+
 /* ═══════════════════════════════════════════ PRINT */
 @media print {
   body { background:white; }
   .hero-el * { text-shadow:none !important; box-shadow:none !important; }
   #toolbar, #editor-panel, #heroChangBtn, .el-del, .el-handle { display:none !important; }
   #main-layout { padding:0; justify-content:center; }
-  #catalogue { box-shadow:none; border-radius:0; width:100%; }
+  #catalogue-stage { width:794px; height:1123px; max-width:none; }
+  #catalogue { box-shadow:none; border-radius:0; width:794px; transform:none !important; }
   .hero, .hero-glow, #heroBgWrap, #heroOverlay { print-color-adjust:exact !important; -webkit-print-color-adjust:exact !important; }
   .product-card { break-inside:avoid; }
   @page { size:A4 portrait; margin:0; }
@@ -465,6 +529,7 @@ body.edit-mode [contenteditable="true"]:focus {
   <!-- END SIDEBAR -->
 
   <!-- ── CATALOGUE ── -->
+  <div id="catalogue-stage">
   <div id="catalogue">
 
     <!-- ━━━ HERO ━━━ -->
@@ -581,6 +646,8 @@ body.edit-mode [contenteditable="true"]:focus {
 
   </div>
   <!-- END CATALOGUE -->
+  </div>
+  <!-- END CATALOGUE STAGE -->
 
 </div>
 
@@ -589,7 +656,7 @@ body.edit-mode [contenteditable="true"]:focus {
    STATE
 ════════════════════════════════════════════════════ */
 let gRows=3, gCols=4, editMode=false, shapeN=0;
-let dragEl=null, dragOffX=0, dragOffY=0;
+let dragEl=null, dragOffX=0, dragOffY=0, dragPointerId=null;
 
 const PRODS = [
   {name:"Short Body with Flange",       mrp:"MRP Rs. 223/-", packing:"Packing – 28 pcs"},
@@ -670,7 +737,7 @@ function changeGrid(axis, delta) {
    DRAG & DROP
 ════════════════════════════════════════════════════ */
 function initDrag() {
-  document.addEventListener('mousedown', e => {
+  document.addEventListener('pointerdown', e => {
     if (!editMode) return;
     const el = e.target.closest('.hero-el');
     if (!el) return;
@@ -679,40 +746,57 @@ function initDrag() {
 
     e.preventDefault();
     dragEl = el;
+    dragPointerId = e.pointerId;
+    dragEl.setPointerCapture?.(e.pointerId);
     dragEl.classList.add('dragging');
 
     const hero     = document.getElementById('hero');
     const heroRect = hero.getBoundingClientRect();
     const elRect   = el.getBoundingClientRect();
+    const scale    = getCatalogueScale();
 
     // Convert right/bottom to left/top
     el.style.right     = 'auto';
     el.style.bottom    = 'auto';
     el.style.transform = 'none';
-    el.style.left = (elRect.left - heroRect.left) + 'px';
-    el.style.top  = (elRect.top  - heroRect.top)  + 'px';
+    el.style.left = ((elRect.left - heroRect.left) / scale) + 'px';
+    el.style.top  = ((elRect.top  - heroRect.top) / scale)  + 'px';
 
-    dragOffX = e.clientX - elRect.left;
-    dragOffY = e.clientY - elRect.top;
+    dragOffX = (e.clientX - elRect.left) / scale;
+    dragOffY = (e.clientY - elRect.top) / scale;
 
     activateEl(el.id);
   });
 
-  document.addEventListener('mousemove', e => {
+  document.addEventListener('pointermove', e => {
     if (!dragEl) return;
+    if (dragPointerId !== null && e.pointerId !== dragPointerId) return;
     const hero     = document.getElementById('hero');
     const heroRect = hero.getBoundingClientRect();
-    let nl = e.clientX - heroRect.left - dragOffX;
-    let nt = e.clientY - heroRect.top  - dragOffY;
-    nl = Math.max(-15, Math.min(heroRect.width  - 10, nl));
-    nt = Math.max(-15, Math.min(heroRect.height - 10, nt));
+    const scale = getCatalogueScale();
+    let nl = (e.clientX - heroRect.left) / scale - dragOffX;
+    let nt = (e.clientY - heroRect.top) / scale - dragOffY;
+    nl = Math.max(-15, Math.min(794 - 10, nl));
+    nt = Math.max(-15, Math.min(430 - 10, nt));
     dragEl.style.left = nl + 'px';
     dragEl.style.top  = nt + 'px';
   });
 
-  document.addEventListener('mouseup', () => {
-    if (dragEl) { dragEl.classList.remove('dragging'); dragEl=null; }
-  });
+  document.addEventListener('pointerup', endDrag);
+  document.addEventListener('pointercancel', endDrag);
+
+  function endDrag(e) {
+    if (!dragEl) return;
+    if (dragPointerId !== null && e.pointerId !== dragPointerId) return;
+    dragEl.releasePointerCapture?.(dragPointerId);
+    dragEl.classList.remove('dragging');
+    dragEl=null;
+    dragPointerId=null;
+  }
+
+  document.addEventListener('touchmove', e => {
+    if (dragEl) e.preventDefault();
+  }, { passive:false });
 
   // Click outside deselects
   document.addEventListener('click', e => {
@@ -722,6 +806,12 @@ function initDrag() {
       updateLayers();
     }
   });
+}
+
+function getCatalogueScale() {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--catalogue-scale');
+  const scale = parseFloat(raw);
+  return Number.isFinite(scale) && scale > 0 ? scale : 1;
 }
 
 /* ════════════════════════════════════════════════════
@@ -949,13 +1039,25 @@ function fitGrid() {
   document.documentElement.style.setProperty('--card-scale', scale.toFixed(3));
 }
 
+function updateCatalogueScale() {
+  const maxWidth = 794;
+  const gutter = window.innerWidth <= 830 ? 20 : 32;
+  const available = Math.max(280, window.innerWidth - gutter);
+  const scale = Math.min(1, available / maxWidth);
+  document.documentElement.style.setProperty('--catalogue-scale', scale.toFixed(5));
+}
+
 /* ════════════════════════════════════════════════════
    INIT
 ════════════════════════════════════════════════════ */
+updateCatalogueScale();
 buildGrid();
 initDrag();
 requestAnimationFrame(fitGrid);
-window.addEventListener('resize', fitGrid);
+window.addEventListener('resize', () => {
+  updateCatalogueScale();
+  fitGrid();
+});
 </script>
 
 </body>
