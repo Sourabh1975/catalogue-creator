@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catalogue Creator</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════ RESET */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body { font-family:'Inter',sans-serif; background:#111827; min-height:100vh; }
+
+/* ═══════════════════════════════════════════ TOOLBAR */
+#toolbar {
+  height: 52px;
+  background: linear-gradient(135deg,#0a1628,#0d2241);
+  display: flex; align-items: center; padding: 0 18px; gap: 10px;
+  position: sticky; top:0; z-index:9999;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.45);
+  border-bottom: 1.5px solid rgba(99,179,237,0.12);
+}
+.tb-brand { display:flex; align-items:center; gap:10px; margin-right:10px; }
+.tb-brand-icon {
+  width:32px; height:32px;
+  background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+  border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px;
+}
+.tb-brand-text h2 { font-size:13px; font-weight:700; color:white; font-family:'Montserrat',sans-serif; }
+.tb-brand-text p  { font-size:9px; color:rgba(255,255,255,0.4); }
+.tb-divider { width:1px; height:26px; background:rgba(255,255,255,0.1); margin:0 4px; }
+.tb-btn {
+  padding:6px 14px; border:none; border-radius:6px;
+  font-family:'Inter',sans-serif; font-size:11px; font-weight:600;
+  cursor:pointer; transition:all .18s; display:flex; align-items:center; gap:5px; white-space:nowrap;
+}
+.tb-edit { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.75); border:1px solid rgba(255,255,255,0.14); }
+.tb-edit:hover { background:rgba(255,255,255,0.14); }
+.tb-edit.active {
+  background:linear-gradient(135deg,#166534,#15803d); color:#bbf7d0;
+  border-color:#4ade80; box-shadow:0 0 12px rgba(74,222,128,0.3);
+}
+.tb-dl {
+  background:linear-gradient(135deg,#ea580c,#c2410c); color:white;
+  box-shadow:0 2px 10px rgba(234,88,12,0.35); margin-left:auto;
+}
+.tb-dl:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(234,88,12,0.5); }
+#tb-hint { font-size:10px; color:rgba(255,255,255,0.35); font-style:italic; }
+
+/* ═══════════════════════════════════════════ MAIN LAYOUT */
+#main-layout {
+  display:flex; justify-content:center; padding:22px 16px 40px; gap:18px; align-items:flex-start;
+}
+
+/* ═══════════════════════════════════════════ EDITOR SIDEBAR */
+#editor-panel {
+  width:210px; flex-shrink:0; display:none; flex-direction:column; gap:12px;
+  position:sticky; top:70px; max-height:calc(100vh - 80px); overflow-y:auto;
+}
+body.edit-mode #editor-panel { display:flex; }
+
+.ep-card {
+  background:#1f2937; border:1px solid rgba(255,255,255,0.07);
+  border-radius:10px; overflow:hidden;
+}
+.ep-title {
+  background:rgba(255,255,255,0.04); padding:7px 11px;
+  font-size:9px; font-weight:700; color:rgba(255,255,255,0.5);
+  letter-spacing:1.2px; text-transform:uppercase;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.ep-body { padding:11px; }
+
+/* Grid control */
+.grid-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; }
+.grid-row:last-child { margin-bottom:0; }
+.grid-lbl { font-size:11px; color:rgba(255,255,255,0.65); font-weight:500; }
+.grid-ctrl { display:flex; align-items:center; gap:7px; }
+.g-btn {
+  width:24px; height:24px; background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.12); border-radius:5px;
+  color:white; font-size:15px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; line-height:1;
+  transition:background .15s;
+}
+.g-btn:hover { background:rgba(255,255,255,0.18); }
+.g-val { font-size:15px; font-weight:700; color:white; min-width:22px; text-align:center; }
+
+/* Shapes grid */
+.shapes-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+.shape-btn {
+  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);
+  border-radius:8px; padding:8px 3px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:4px; transition:all .18s;
+}
+.shape-btn:hover { background:rgba(59,130,246,0.22); border-color:#3b82f6; }
+.s-ico { font-size:18px; line-height:1; }
+.s-lbl { font-size:9px; color:rgba(255,255,255,0.55); font-weight:600; }
+
+/* Layers list */
+#layersList { display:flex; flex-direction:column; gap:4px; max-height:180px; overflow-y:auto; }
+.layer-item {
+  display:flex; align-items:center; gap:6px; padding:5px 7px;
+  border-radius:6px; cursor:pointer; transition:background .15s;
+  border:1px solid transparent;
+}
+.layer-item:hover { background:rgba(255,255,255,0.05); }
+.layer-item.selected { background:rgba(59,130,246,0.18); border-color:rgba(59,130,246,0.35); }
+.layer-vis {
+  width:18px; height:18px; cursor:pointer; font-size:12px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:3px; flex-shrink:0;
+}
+.layer-vis:hover { background:rgba(255,255,255,0.1); }
+.layer-name {
+  font-size:10px; color:rgba(255,255,255,0.65); font-weight:500;
+  flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.layer-del {
+  width:18px; height:18px; background:none; border:none;
+  color:rgba(248,113,113,0.55); cursor:pointer; font-size:15px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:3px; transition:all .15s; line-height:1;
+}
+.layer-del:hover { color:#f87171; background:rgba(248,113,113,0.15); }
+
+/* ═══════════════════════════════════════════ CATALOGUE - A4 */
+#catalogue {
+  width:794px; flex-shrink:0; background:white;
+  box-shadow:0 20px 80px rgba(0,0,0,0.5); overflow:hidden; border-radius:3px;
+}
+
+/* ═══════════════════════════════════════════ HERO */
+.hero {
+  width:100%; height:430px;
+  background-color:#0a1f15;
+  background-image:linear-gradient(155deg,#0a1f15 0%,#122a1e 35%,#0c1e13 70%,#091510 100%);
+  background-size:cover; background-position:center;
+  position:relative; overflow:hidden;
+  print-color-adjust:exact; -webkit-print-color-adjust:exact;
+}
+.hero-glow {
+  position:absolute; top:50%; left:52%;
+  transform:translate(-50%,-56%);
+  width:480px; height:480px;
+  background:radial-gradient(ellipse at center,
+    rgba(255,252,228,.95) 0%,rgba(255,242,180,.75) 18%,
+    rgba(255,225,130,.4) 36%,rgba(255,200,80,.12) 55%,transparent 72%);
+  border-radius:50%; pointer-events:none; z-index:1;
+  print-color-adjust:exact; -webkit-print-color-adjust:exact;
+}
+#heroBgWrap {
+  position:absolute; inset:0;
+  background-size:cover; background-position:center; z-index:1;
+  print-color-adjust:exact; -webkit-print-color-adjust:exact;
+}
+#heroOverlay {
+  position:absolute; inset:0;
+  background:
+    linear-gradient(to right,rgba(5,20,12,.72) 0%,rgba(5,20,12,.28) 45%,rgba(5,20,12,.52) 100%),
+    linear-gradient(to bottom,rgba(0,0,0,.42) 0%,rgba(0,0,0,.08) 50%,rgba(0,0,0,.52) 100%);
+  z-index:2; pointer-events:none; display:none;
+  print-color-adjust:exact; -webkit-print-color-adjust:exact;
+}
+/* Hero upload placeholder */
+#heroPh {
+  position:absolute; inset:0; z-index:3;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  cursor:pointer; color:rgba(255,255,255,.4); gap:10px; transition:all .2s;
+}
+#heroPh:hover { color:rgba(255,255,255,.7); background:rgba(255,255,255,.03); }
+#heroPh .ph-ico { font-size:48px; }
+#heroPh .ph-txt { font-size:14px; font-weight:700; letter-spacing:.5px; font-family:'Montserrat',sans-serif; }
+#heroPh .ph-sub { font-size:10px; opacity:.6; }
+/* Change image btn */
+#heroChangBtn {
+  position:absolute; top:8px; left:50%; transform:translateX(-50%);
+  z-index:200; background:rgba(0,0,0,.6); color:white;
+  border:1.5px solid rgba(255,255,255,.3); border-radius:20px;
+  padding:5px 14px; font-size:10px; font-weight:700;
+  font-family:'Inter',sans-serif; cursor:pointer; display:none;
+  backdrop-filter:blur(4px); transition:all .2s;
+}
+#heroChangBtn:hover { background:rgba(0,0,0,.88); }
+body.edit-mode #heroChangBtn { display:block; }
+
+/* ═══════════════════════════════════════════ HERO ELEMENT WRAPPER */
+.hero-el {
+  position:absolute; z-index:10; user-select:none;
+}
+body.edit-mode .hero-el {
+  cursor:move;
+  outline:1.5px dashed rgba(96,165,250,.55);
+  border-radius:4px;
+  padding:2px;
+}
+body.edit-mode .hero-el:hover { outline:2px solid #60a5fa; z-index:50; }
+body.edit-mode .hero-el.dragging { outline:2px solid #3b82f6; opacity:.92; z-index:100; box-shadow:0 8px 32px rgba(0,0,0,.45); }
+
+.el-del {
+  position:absolute; top:-10px; right:-10px;
+  width:20px; height:20px; background:#ef4444; color:white;
+  border:2px solid white; border-radius:50%; font-size:12px;
+  cursor:pointer; display:none; align-items:center; justify-content:center;
+  z-index:300; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,.3); line-height:1;
+  transition:all .15s;
+}
+.el-del:hover { background:#b91c1c; transform:scale(1.15); }
+body.edit-mode .hero-el:hover .el-del,
+body.edit-mode .hero-el.active-el .el-del { display:flex; }
+
+.el-handle {
+  position:absolute; top:-10px; left:-10px;
+  width:20px; height:20px; background:#3b82f6; color:white;
+  border:2px solid white; border-radius:50%; font-size:9px;
+  display:none; align-items:center; justify-content:center;
+  z-index:300; box-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+body.edit-mode .hero-el:hover .el-handle,
+body.edit-mode .hero-el.active-el .el-handle { display:flex; }
+
+/* ═══════════════════════════════════════════ HERO INNER ELEMENTS */
+.series-name {
+  font-size:46px; font-weight:900; letter-spacing:4px;
+  color:white; text-shadow:0 2px 16px rgba(0,0,0,.7); line-height:1;
+  text-transform:uppercase; font-family:'Montserrat',sans-serif;
+}
+.series-sub {
+  font-size:13px; font-weight:600; letter-spacing:7px;
+  color:rgba(255,255,255,.65); margin-top:4px; text-transform:uppercase;
+  font-family:'Montserrat',sans-serif;
+}
+.brand-box {
+  background:white; border-radius:10px; padding:9px 16px; text-align:center;
+  min-width:145px; box-shadow:0 6px 24px rgba(0,0,0,.35);
+}
+.brand-box .bname { font-size:17px; font-weight:900; color:#0055a0; letter-spacing:1px; font-family:'Montserrat',sans-serif; }
+.brand-box .btag  { font-size:8px; color:#666; font-weight:600; margin-top:2px; }
+.warranty-badge {
+  width:82px; height:82px;
+  background:radial-gradient(circle at 38% 38%,#ef5350,#b71c1c);
+  border-radius:50%; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; color:white;
+  box-shadow:0 6px 24px rgba(183,28,28,.55),inset 0 0 0 3px rgba(255,255,255,.3),inset 0 0 0 5px rgba(200,0,0,.2);
+  print-color-adjust:exact; -webkit-print-color-adjust:exact;
+}
+.w-num  { font-size:24px; font-weight:900; line-height:1; font-family:'Montserrat',sans-serif; }
+.w-text { font-size:7.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; line-height:1.5; }
+.features-list { display:flex; flex-direction:column; gap:9px; }
+.feat-item { display:flex; align-items:center; gap:9px; }
+.feat-dot {
+  width:20px; height:20px;
+  background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.35);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:9px; color:#7fde97; flex-shrink:0; font-weight:700;
+  print-color-adjust:exact; -webkit-print-color-adjust:exact;
+}
+.feat-text { font-size:9.5px; font-weight:600; color:rgba(255,255,255,.88); }
+.specs-card {
+  background:rgba(0,0,0,.42); border:1px solid rgba(255,255,255,.12);
+  border-radius:10px; padding:10px 14px; min-width:165px;
+  print-color-adjust:exact; -webkit-print-color-adjust:exact;
+}
+.spec-row { display:flex; align-items:center; gap:6px; font-size:9px; margin-bottom:5px; color:rgba(255,255,255,.8); }
+.spec-row:last-child { margin-bottom:0; }
+.spec-lbl { font-weight:700; color:#7fdecc; }
+.badge-360 {
+  width:68px; height:68px; background:rgba(0,0,0,.45);
+  border:2.5px solid rgba(255,255,255,.25); border-radius:50%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  print-color-adjust:exact; -webkit-print-color-adjust:exact;
+}
+.b360-num  { font-size:19px; font-weight:900; color:#ffd54f; line-height:1; font-family:'Montserrat',sans-serif; }
+.b360-text { font-size:7px; font-weight:700; color:rgba(255,255,255,.75); text-transform:uppercase; letter-spacing:.5px; }
+.hero-prod-name   { font-size:24px; font-weight:800; color:white; text-shadow:0 2px 12px rgba(0,0,0,.6); line-height:1.1; font-family:'Montserrat',sans-serif; }
+.hero-prod-detail { font-size:11px; color:rgba(255,255,255,.75); font-weight:500; margin-top:5px; line-height:1.7; }
+.hero-prod-mrp    { font-size:17px; font-weight:800; color:#ffd54f; margin-top:5px; text-shadow:0 2px 8px rgba(0,0,0,.4); font-family:'Montserrat',sans-serif; }
+.hero-btm-label   { font-size:7.5px; font-weight:700; letter-spacing:2.5px; color:rgba(255,255,255,.4); text-transform:uppercase; white-space:nowrap; }
+
+/* ═══════════════════════════════════════════ CUSTOM SHAPES */
+.cshape { display:flex; align-items:center; justify-content:center; text-align:center; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+.cshape.is-rect   { border-radius:8px; }
+.cshape.is-circle { border-radius:50%; }
+.cshape.is-badge  { border-radius:50%; }
+.shape-inner { font-size:10px; font-weight:700; color:white; padding:6px; font-family:'Montserrat',sans-serif; text-align:center; line-height:1.3; }
+
+/* ═══════════════════════════════════════════ PRODUCTS */
+.products-section { background:#fff; padding:16px 20px 20px; }
+.prod-section-hdr { display:flex; align-items:center; gap:12px; margin-bottom:13px; }
+.psh-line  { flex:1; height:2px; background:linear-gradient(90deg,#0055a0,transparent); border-radius:2px; }
+.psh-liner { flex:1; height:2px; background:linear-gradient(90deg,transparent,#0055a0); border-radius:2px; }
+.psh-title { font-size:10px; font-weight:800; color:#0055a0; letter-spacing:3px; text-transform:uppercase; white-space:nowrap; font-family:'Montserrat',sans-serif; }
+.products-grid { display:grid; gap:10px; }
+.product-card {
+  border:1px solid #e8edf2; border-radius:9px; padding:10px 8px 9px;
+  text-align:center; background:#fdfdff; transition:all .2s;
+  display:flex; flex-direction:column; align-items:center;
+  break-inside:avoid;
+  print-color-adjust:exact; -webkit-print-color-adjust:exact;
+}
+.product-card:hover { border-color:#90caf9; box-shadow:0 4px 16px rgba(0,85,160,.1); transform:translateY(-1px); }
+.prod-img-box {
+  width:100%; height:85px; display:flex; align-items:center; justify-content:center;
+  margin-bottom:7px; cursor:pointer; border-radius:6px; position:relative; overflow:hidden;
+}
+.prod-img-box img { max-width:100%; max-height:100%; object-fit:contain; display:none; }
+.prod-img-ph {
+  width:100%; height:100%;
+  background:linear-gradient(145deg,#f0f4f9,#e8f0fe);
+  border:1.5px dashed #b0c4de; border-radius:6px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  color:#8fa8c8; font-size:8px; font-weight:700; gap:3px; cursor:pointer; transition:all .2s;
+}
+.prod-img-ph .ps { font-size:20px; line-height:1; opacity:.5; }
+.prod-img-ph:hover { background:linear-gradient(145deg,#dceeff,#c8e6fb); border-color:#42a5f5; color:#1565c0; }
+body.edit-mode .prod-img-box::after {
+  content:'📷'; position:absolute; top:3px; right:3px;
+  font-size:12px; background:rgba(21,101,192,.8); border-radius:4px;
+  padding:2px 4px; opacity:0; transition:opacity .2s;
+}
+body.edit-mode .prod-img-box:hover::after { opacity:1; }
+.prod-name    { font-size:9.5px; font-weight:700; color:#1a2340; text-align:center; line-height:1.4; margin-bottom:4px; font-family:'Montserrat',sans-serif; }
+.prod-mrp     { font-size:10px; font-weight:800; color:#0055a0; margin-bottom:2px; }
+.prod-packing { font-size:8px; color:#7a8ea8; font-weight:600; }
+
+/* ═══════════════════════════════════════════ EDIT MODE */
+body.edit-mode [contenteditable="true"] {
+  outline:1.5px dashed rgba(96,165,250,.6); border-radius:2px;
+  cursor:text; min-width:8px; min-height:8px;
+}
+body.edit-mode [contenteditable="true"]:focus {
+  outline:2px solid #60a5fa; background:rgba(96,165,250,.08); border-radius:3px;
+}
+
+/* ═══════════════════════════════════════════ PRINT */
+@media print {
+  *, *::before, *::after { print-color-adjust:exact !important; -webkit-print-color-adjust:exact !important; }
+  body { background:white; }
+  #toolbar, #editor-panel, #heroChangBtn, .el-del, .el-handle { display:none !important; }
+  #main-layout { padding:0; justify-content:center; }
+  #catalogue { box-shadow:none; border-radius:0; width:100%; }
+  .hero, .hero-glow, #heroBgWrap, #heroOverlay { print-color-adjust:exact !important; -webkit-print-color-adjust:exact !important; }
+  .product-card { break-inside:avoid; }
+  @page { size:A4 portrait; margin:0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════ TOOLBAR ═══════ -->
+<div id="toolbar">
+  <div class="tb-brand">
+    <div class="tb-brand-icon">💧</div>
+    <div class="tb-brand-text">
+      <h2>Catalogue Creator</h2>
+      <p>Edit Mode on karo → design karo → Download PDF</p>
+    </div>
+  </div>
+  <div class="tb-divider"></div>
+  <button class="tb-btn tb-edit" id="editBtn" onclick="toggleEdit()">✏️ Edit Mode</button>
+  <span id="tb-hint">OFF</span>
+  <button class="tb-btn tb-dl" onclick="downloadPDF()">⬇️ Download PDF</button>
+</div>
+
+<!-- ═══════ MAIN LAYOUT ═══════ -->
+<div id="main-layout">
+
+  <!-- ── EDITOR SIDEBAR ── -->
+  <div id="editor-panel">
+
+    <!-- Grid Control -->
+    <div class="ep-card">
+      <div class="ep-title">📦 Products Grid</div>
+      <div class="ep-body">
+        <div class="grid-row">
+          <span class="grid-lbl">Rows</span>
+          <div class="grid-ctrl">
+            <button class="g-btn" onclick="changeGrid('r',-1)">−</button>
+            <span class="g-val" id="rVal">3</span>
+            <button class="g-btn" onclick="changeGrid('r',+1)">+</button>
+          </div>
+        </div>
+        <div class="grid-row">
+          <span class="grid-lbl">Columns</span>
+          <div class="grid-ctrl">
+            <button class="g-btn" onclick="changeGrid('c',-1)">−</button>
+            <span class="g-val" id="cVal">4</span>
+            <button class="g-btn" onclick="changeGrid('c',+1)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Shapes -->
+    <div class="ep-card">
+      <div class="ep-title">➕ Add to Hero</div>
+      <div class="ep-body">
+        <div class="shapes-grid">
+          <button class="shape-btn" onclick="addShape('rect')">
+            <span class="s-ico">⬜</span><span class="s-lbl">Rectangle</span>
+          </button>
+          <button class="shape-btn" onclick="addShape('circle')">
+            <span class="s-ico">⭕</span><span class="s-lbl">Circle</span>
+          </button>
+          <button class="shape-btn" onclick="addShape('triangle')">
+            <span class="s-ico">🔺</span><span class="s-lbl">Triangle</span>
+          </button>
+          <button class="shape-btn" onclick="addShape('text')">
+            <span class="s-ico">🔤</span><span class="s-lbl">Text</span>
+          </button>
+          <button class="shape-btn" onclick="addShape('badge')">
+            <span class="s-ico">🏅</span><span class="s-lbl">Badge</span>
+          </button>
+          <button class="shape-btn" onclick="addShape('imgbox')">
+            <span class="s-ico">📷</span><span class="s-lbl">Image</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Layers -->
+    <div class="ep-card">
+      <div class="ep-title">🗂️ Layers</div>
+      <div class="ep-body" style="padding:8px;">
+        <div id="layersList"></div>
+      </div>
+    </div>
+
+  </div>
+  <!-- END SIDEBAR -->
+
+  <!-- ── CATALOGUE ── -->
+  <div id="catalogue">
+
+    <!-- ━━━ HERO ━━━ -->
+    <div class="hero" id="hero">
+
+      <div id="heroBgWrap"></div>
+      <div id="heroOverlay"></div>
+      <div class="hero-glow"></div>
+
+      <!-- Upload placeholder -->
+      <div id="heroPh" onclick="pickHeroImg()">
+        <span class="ph-ico">📷</span>
+        <span class="ph-txt">Click to Upload Hero Background Image</span>
+        <span class="ph-sub">Image poore dark background ko fill karegi</span>
+      </div>
+
+      <!-- Change btn -->
+      <button id="heroChangBtn" onclick="pickHeroImg()">📷 Change Image</button>
+
+      <!-- ── DRAGGABLE ELEMENTS ── -->
+
+      <!-- Series -->
+      <div class="hero-el" id="el-series" data-name="Series Name" style="left:22px;top:18px;">
+        <div class="el-handle">⠿</div>
+        <button class="el-del" onclick="deleteEl('el-series')">×</button>
+        <div>
+          <div class="series-name" contenteditable="false">CRYSTA</div>
+          <div class="series-sub"  contenteditable="false">SERIES</div>
+        </div>
+      </div>
+
+      <!-- Brand Box -->
+      <div class="hero-el" id="el-brand" data-name="Brand Box" style="right:22px;top:18px;">
+        <div class="el-handle">⠿</div>
+        <button class="el-del" onclick="deleteEl('el-brand')">×</button>
+        <div class="brand-box">
+          <div class="bname" contenteditable="false">NIRMAL DHARA</div>
+          <div class="btag"  contenteditable="false">A Legacy of Trust and Quality</div>
+        </div>
+      </div>
+
+      <!-- Warranty -->
+      <div class="hero-el" id="el-warranty" data-name="Warranty Badge" style="left:22px;top:88px;">
+        <div class="el-handle">⠿</div>
+        <button class="el-del" onclick="deleteEl('el-warranty')">×</button>
+        <div class="warranty-badge">
+          <span class="w-num"  contenteditable="false">36</span>
+          <span class="w-text" contenteditable="false">MONTHS<br>WARRANTY</span>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="hero-el" id="el-features" data-name="Features List" style="left:22px;top:185px;">
+        <div class="el-handle">⠿</div>
+        <button class="el-del" onclick="deleteEl('el-features')">×</button>
+        <div class="features-list">
+          <div class="feat-item"><div class="feat-dot">✓</div><div class="feat-text" contenteditable="false">ISI Marked</div></div>
+          <div class="feat-item"><div class="feat-dot">✓</div><div class="feat-text" contenteditable="false">Quality with Longevity</div></div>
+          <div class="feat-item"><div class="feat-dot">✓</div><div class="feat-text" contenteditable="false">Exceptional Quality</div></div>
+          <div class="feat-item"><div class="feat-dot">✓</div><div class="feat-text" contenteditable="false">Teflon Available</div></div>
+          <div class="feat-item"><div class="feat-dot">✓</div><div class="feat-text" contenteditable="false">Chrome &amp; White Available</div></div>
+        </div>
+      </div>
+
+      <!-- Specs Card -->
+      <div class="hero-el" id="el-specs" data-name="Specs Card" style="left:22px;top:348px;">
+        <div class="el-handle">⠿</div>
+        <button class="el-del" onclick="deleteEl('el-specs')">×</button>
+        <div class="specs-card">
+          <div class="spec-row"><span class="spec-lbl" contenteditable="false">Tap Size:</span><span contenteditable="false">15mm</span></div>
+          <div class="spec-row"><span class="spec-lbl" contenteditable="false">Flow:</span><span contenteditable="false">Honeycomb Foam Flow</span></div>
+          <div class="spec-row"><span class="spec-lbl" contenteditable="false">Turn:</span><span contenteditable="false">360° Full Turn</span></div>
+        </div>
+      </div>
+
+      <!-- 360 badge -->
+      <div class="hero-el" id="el-360" data-name="360° Badge" style="right:22px;top:105px;">
+        <div class="el-handle">⠿</div>
+        <button class="el-del" onclick="deleteEl('el-360')">×</button>
+        <div class="badge-360">
+          <div class="b360-num"  contenteditable="false">360°</div>
+          <div class="b360-text" contenteditable="false">Full Turn</div>
+        </div>
+      </div>
+
+      <!-- Bottom label -->
+      <div class="hero-el" id="el-btmlbl" data-name="Bottom Label" style="left:220px;top:410px;">
+        <div class="el-handle">⠿</div>
+        <button class="el-del" onclick="deleteEl('el-btmlbl')">×</button>
+        <div class="hero-btm-label" contenteditable="false">★ Honeycomb Foam Flow Technology ★</div>
+      </div>
+
+      <!-- Product Info -->
+      <div class="hero-el" id="el-prodinfo" data-name="Product Info" style="right:22px;top:320px;text-align:right;">
+        <div class="el-handle">⠿</div>
+        <button class="el-del" onclick="deleteEl('el-prodinfo')">×</button>
+        <div class="hero-prod-name"   contenteditable="false">Wall Mixer</div>
+        <div class="hero-prod-detail" contenteditable="false">M.Box – 12 pcs</div>
+        <div class="hero-prod-mrp"    contenteditable="false">MRP Rs. 3270/-</div>
+      </div>
+
+    </div>
+    <!-- END HERO -->
+
+    <!-- ━━━ PRODUCTS ━━━ -->
+    <div class="products-section">
+      <div class="prod-section-hdr">
+        <div class="psh-line"></div>
+        <div class="psh-title" contenteditable="false">Our Products</div>
+        <div class="psh-liner"></div>
+      </div>
+      <div class="products-grid" id="productsGrid"></div>
+    </div>
+
+  </div>
+  <!-- END CATALOGUE -->
+
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════════ */
+let gRows=3, gCols=4, editMode=false, shapeN=0;
+let dragEl=null, dragOffX=0, dragOffY=0;
+
+const PRODS = [
+  {name:"Short Body with Flange",       mrp:"MRP Rs. 223/-", packing:"Packing – 28 pcs"},
+  {name:"Long Body with Flange",        mrp:"MRP Rs. 210/-", packing:"Packing – 18 pcs"},
+  {name:"Machine Cock with Flange",     mrp:"MRP Rs. 315/-", packing:"Packing – 26 pcs"},
+  {name:"Angle Cock with Flange",       mrp:"MRP Rs. 223/-", packing:"Packing – 40 pcs"},
+  {name:"Garden Cock with Flange",      mrp:"MRP Rs. 291/-", packing:"Packing – 26 pcs"},
+  {name:"Pillar Cock with Flange",      mrp:"MRP Rs. 451/-", packing:"Packing – 16 pcs"},
+  {name:"2 Way Bib Cock With Flange",   mrp:"MRP Rs. 432/-", packing:"Packing – 36 pcs"},
+  {name:"2 Way Angle Cock with Flange", mrp:"MRP Rs. 425/-", packing:"Packing – 17 pcs"},
+  {name:"Pillar Sink Cock (Short)",     mrp:"MRP Rs. 590/-", packing:"Packing – 12 pcs"},
+  {name:"Pillar Sink Cock (Long)",      mrp:"MRP Rs. 704/-", packing:"Packing –  9 pcs"},
+  {name:"Wall Sink Cock (Short) Flange",mrp:"MRP Rs. 506/-", packing:"Packing – 12 pcs"},
+  {name:"Wall Sink Cock (Long) Flange", mrp:"MRP Rs. 415/-", packing:"Packing –  9 pcs"},
+];
+
+/* ════════════════════════════════════════════════════
+   BUILD GRID
+════════════════════════════════════════════════════ */
+function buildGrid() {
+  const grid = document.getElementById('productsGrid');
+  grid.style.gridTemplateColumns = `repeat(${gCols},1fr)`;
+  const total = gRows * gCols;
+
+  // Preserve existing data
+  const saved = [];
+  grid.querySelectorAll('.product-card').forEach((card, i) => {
+    saved[i] = {
+      name:    card.querySelector('.prod-name')?.textContent    || '',
+      mrp:     card.querySelector('.prod-mrp')?.textContent     || '',
+      packing: card.querySelector('.prod-packing')?.textContent || '',
+      img:     card.querySelector('img')?.src || '',
+    };
+  });
+
+  grid.innerHTML = '';
+
+  for (let i=0; i<total; i++) {
+    const d = PRODS[i] || {name:`Product ${i+1}`, mrp:'MRP Rs. 000/-', packing:'Packing – 0 pcs'};
+    const s = saved[i] || {};
+    const name    = s.name    || d.name;
+    const mrp     = s.mrp     || d.mrp;
+    const packing = s.packing || d.packing;
+    const img     = s.img     || '';
+
+    const card = document.createElement('div');
+    card.className = 'product-card';
+    card.innerHTML = `
+      <div class="prod-img-box" onclick="pickProdImg(${i})">
+        <img id="pimg${i}" src="${img}" alt="" style="display:${img?'block':'none'}">
+        <div class="prod-img-ph" id="pph${i}" style="display:${img?'none':''}">
+          <span class="ps">+</span><span>Image</span>
+        </div>
+      </div>
+      <div class="prod-name"    contenteditable="${editMode?'true':'false'}">${name}</div>
+      <div class="prod-mrp"     contenteditable="${editMode?'true':'false'}">${mrp}</div>
+      <div class="prod-packing" contenteditable="${editMode?'true':'false'}">${packing}</div>
+    `;
+    grid.appendChild(card);
+  }
+
+  document.getElementById('rVal').textContent = gRows;
+  document.getElementById('cVal').textContent = gCols;
+}
+
+/* ════════════════════════════════════════════════════
+   GRID CONTROL
+════════════════════════════════════════════════════ */
+function changeGrid(axis, delta) {
+  if (axis==='r') gRows = Math.max(1, Math.min(10, gRows+delta));
+  else            gCols = Math.max(1, Math.min(6,  gCols+delta));
+  buildGrid();
+}
+
+/* ════════════════════════════════════════════════════
+   DRAG & DROP
+════════════════════════════════════════════════════ */
+function initDrag() {
+  document.addEventListener('mousedown', e => {
+    if (!editMode) return;
+    const el = e.target.closest('.hero-el');
+    if (!el) return;
+    if (e.target.closest('.el-del'))                  return;
+    if (e.target.closest('[contenteditable="true"]')) return;
+
+    e.preventDefault();
+    dragEl = el;
+    dragEl.classList.add('dragging');
+
+    const hero     = document.getElementById('hero');
+    const heroRect = hero.getBoundingClientRect();
+    const elRect   = el.getBoundingClientRect();
+
+    // Convert right/bottom to left/top
+    el.style.right     = 'auto';
+    el.style.bottom    = 'auto';
+    el.style.transform = 'none';
+    el.style.left = (elRect.left - heroRect.left) + 'px';
+    el.style.top  = (elRect.top  - heroRect.top)  + 'px';
+
+    dragOffX = e.clientX - elRect.left;
+    dragOffY = e.clientY - elRect.top;
+
+    activateEl(el.id);
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragEl) return;
+    const hero     = document.getElementById('hero');
+    const heroRect = hero.getBoundingClientRect();
+    let nl = e.clientX - heroRect.left - dragOffX;
+    let nt = e.clientY - heroRect.top  - dragOffY;
+    nl = Math.max(-15, Math.min(heroRect.width  - 10, nl));
+    nt = Math.max(-15, Math.min(heroRect.height - 10, nt));
+    dragEl.style.left = nl + 'px';
+    dragEl.style.top  = nt + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (dragEl) { dragEl.classList.remove('dragging'); dragEl=null; }
+  });
+
+  // Click outside deselects
+  document.addEventListener('click', e => {
+    if (!editMode) return;
+    if (!e.target.closest('.hero-el') && !e.target.closest('#editor-panel')) {
+      document.querySelectorAll('.hero-el.active-el').forEach(el => el.classList.remove('active-el'));
+      updateLayers();
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════════
+   SELECTION
+════════════════════════════════════════════════════ */
+function activateEl(id) {
+  document.querySelectorAll('.hero-el.active-el').forEach(el => el.classList.remove('active-el'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active-el');
+  updateLayers();
+}
+
+/* ════════════════════════════════════════════════════
+   DELETE ELEMENT
+════════════════════════════════════════════════════ */
+function deleteEl(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+  updateLayers();
+}
+
+/* ════════════════════════════════════════════════════
+   LAYERS PANEL
+════════════════════════════════════════════════════ */
+function updateLayers() {
+  const list = document.getElementById('layersList');
+  const els  = document.querySelectorAll('#hero .hero-el');
+  list.innerHTML = '';
+
+  if (!els.length) {
+    list.innerHTML = '<div style="font-size:10px;color:rgba(255,255,255,.3);text-align:center;padding:8px;">No elements</div>';
+    return;
+  }
+
+  els.forEach(el => {
+    const name   = el.dataset.name || el.id;
+    const hidden = el.style.display === 'none';
+    const active = el.classList.contains('active-el');
+
+    const item = document.createElement('div');
+    item.className = 'layer-item' + (active ? ' selected' : '');
+    item.innerHTML = `
+      <span class="layer-vis" onclick="toggleVis('${el.id}',this)">${hidden?'🙈':'👁️'}</span>
+      <span class="layer-name">${name}</span>
+      <button class="layer-del" onclick="deleteEl('${el.id}')">×</button>
+    `;
+    item.addEventListener('click', e => {
+      if (e.target.closest('.layer-vis') || e.target.closest('.layer-del')) return;
+      activateEl(el.id);
+    });
+    list.appendChild(item);
+  });
+}
+
+function toggleVis(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const hidden = el.style.display === 'none';
+  el.style.display = hidden ? '' : 'none';
+  btn.textContent  = hidden ? '👁️' : '🙈';
+}
+
+/* ════════════════════════════════════════════════════
+   ADD SHAPES
+════════════════════════════════════════════════════ */
+function addShape(type) {
+  const hero = document.getElementById('hero');
+  const id   = `el-shape-${++shapeN}`;
+  const wrap = document.createElement('div');
+  wrap.className  = 'hero-el';
+  wrap.id         = id;
+  wrap.style.left = '200px';
+  wrap.style.top  = '160px';
+
+  let name='', inner='';
+
+  if (type==='rect') {
+    name='Rectangle';
+    inner=`<div class="cshape is-rect" style="width:110px;height:65px;background:rgba(59,130,246,.75);border:2px solid rgba(255,255,255,.4);">
+      <div class="shape-inner" contenteditable="false">Text Here</div></div>`;
+  } else if (type==='circle') {
+    name='Circle';
+    inner=`<div class="cshape is-circle" style="width:85px;height:85px;background:rgba(239,68,68,.78);border:2px solid rgba(255,255,255,.4);">
+      <div class="shape-inner" contenteditable="false">Text</div></div>`;
+  } else if (type==='triangle') {
+    name='Triangle';
+    inner=`<div style="width:0;height:0;border-left:48px solid transparent;border-right:48px solid transparent;border-bottom:82px solid rgba(234,179,8,.85);"></div>`;
+  } else if (type==='text') {
+    name='Text Box';
+    inner=`<div style="font-size:18px;font-weight:700;color:white;font-family:'Montserrat',sans-serif;text-shadow:0 2px 8px rgba(0,0,0,.5);white-space:nowrap;" contenteditable="false">New Text</div>`;
+  } else if (type==='badge') {
+    name='Badge';
+    inner=`<div class="cshape is-badge" style="width:82px;height:82px;background:radial-gradient(circle at 38% 38%,#f97316,#c2410c);border:3px solid rgba(255,255,255,.35);box-shadow:0 4px 16px rgba(0,0,0,.35);">
+      <div class="shape-inner" style="font-size:9px;" contenteditable="false">BADGE<br>TEXT</div></div>`;
+  } else if (type==='imgbox') {
+    name='Image Box';
+    const iid=`simg-${shapeN}`;
+    inner=`<div style="width:130px;height:110px;border:2.5px dashed rgba(255,255,255,.38);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(255,255,255,.06);" onclick="pickShapeImg('${iid}',this)">
+      <img id="${iid}" src="" style="display:none;max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;">
+      <span style="color:rgba(255,255,255,.45);font-size:28px;">📷</span></div>`;
+  }
+
+  wrap.dataset.name = name;
+  wrap.innerHTML = `
+    <div class="el-handle">⠿</div>
+    <button class="el-del" onclick="deleteEl('${id}')">×</button>
+    ${inner}
+  `;
+
+  // Apply contenteditable if edit mode
+  if (editMode) wrap.querySelectorAll('[contenteditable]').forEach(e => e.contentEditable='true');
+
+  hero.appendChild(wrap);
+  updateLayers();
+  setTimeout(() => activateEl(id), 30);
+}
+
+function pickShapeImg(imgId, container) {
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='image/*';
+  inp.onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => {
+      const img = document.getElementById(imgId);
+      const ph  = container.querySelector('span');
+      img.src=ev.target.result; img.style.display='block';
+      if (ph) ph.style.display='none';
+    };
+    r.readAsDataURL(f);
+  };
+  inp.click();
+}
+
+/* ════════════════════════════════════════════════════
+   EDIT MODE
+════════════════════════════════════════════════════ */
+function toggleEdit() {
+  editMode = !editMode;
+  document.body.classList.toggle('edit-mode', editMode);
+
+  document.querySelectorAll('[contenteditable]').forEach(el => {
+    el.contentEditable = editMode ? 'true' : 'false';
+  });
+
+  const btn  = document.getElementById('editBtn');
+  const hint = document.getElementById('tb-hint');
+
+  if (editMode) {
+    btn.textContent='✅ Edit Mode ON'; btn.classList.add('active');
+    hint.textContent='🖊 Drag elements • Click text to edit • Sidebar se shapes/grid control karo';
+    hint.style.color='#86efac';
+    updateLayers();
+  } else {
+    btn.textContent='✏️ Edit Mode'; btn.classList.remove('active');
+    hint.textContent='OFF'; hint.style.color='';
+    document.querySelectorAll('.hero-el.active-el').forEach(el => el.classList.remove('active-el'));
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   HERO IMAGE
+════════════════════════════════════════════════════ */
+function pickHeroImg() {
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='image/*';
+  inp.onchange=e=>{
+    const f=e.target.files[0]; if (!f) return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      const wrap=document.getElementById('heroBgWrap');
+      wrap.style.backgroundImage=`url('${ev.target.result}')`;
+      wrap.style.backgroundSize='cover'; wrap.style.backgroundPosition='center';
+      document.getElementById('heroPh').style.display='none';
+      document.getElementById('heroOverlay').style.display='block';
+    };
+    r.readAsDataURL(f);
+  };
+  inp.click();
+}
+
+/* ════════════════════════════════════════════════════
+   PRODUCT IMAGE
+════════════════════════════════════════════════════ */
+function pickProdImg(i) {
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='image/*';
+  inp.onchange=e=>{
+    const f=e.target.files[0]; if (!f) return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      const img=document.getElementById(`pimg${i}`);
+      const ph =document.getElementById(`pph${i}`);
+      img.src=ev.target.result; img.style.display='block';
+      if (ph) ph.style.display='none';
+    };
+    r.readAsDataURL(f);
+  };
+  inp.click();
+}
+
+/* ════════════════════════════════════════════════════
+   DOWNLOAD
+════════════════════════════════════════════════════ */
+function downloadPDF() {
+  if (editMode) toggleEdit();
+  alert('🖨️ Print Tips:\n\n✅ Destination → Save as PDF\n✅ "Background graphics" checkbox → ZAROOR CHECK KARO\n   (warna hero image print nahi hogi)\n\nOK dabao phir Save karo!');
+  setTimeout(()=>window.print(), 300);
+}
+
+/* ════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════ */
+buildGrid();
+initDrag();
+</script>
+
+</body>
+</html>
