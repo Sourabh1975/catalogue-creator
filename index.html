@@ -291,21 +291,21 @@ body.edit-mode .hero-el.active-el .el-handle { display:flex; }
 
 /* ═══════════════════════════════════════════ PRODUCTS */
 .products-section {
-  flex:1;           /* remaining A4 space le lo */
+  height: calc(1123px - 430px); /* exact remaining A4 space: 693px */
   background:#fff;
-  padding:14px 18px 14px;
+  padding:14px 18px 12px;
   display:flex; flex-direction:column;
   overflow:hidden;
+  print-color-adjust:exact; -webkit-print-color-adjust:exact;
 }
-.prod-section-hdr { display:flex; align-items:center; gap:12px; margin-bottom:13px; }
+.prod-section-hdr { display:flex; align-items:center; gap:12px; margin-bottom:11px; flex-shrink:0; }
 .psh-line  { flex:1; height:2px; background:linear-gradient(90deg,#0055a0,transparent); border-radius:2px; }
 .psh-liner { flex:1; height:2px; background:linear-gradient(90deg,transparent,#0055a0); border-radius:2px; }
 .psh-title { font-size:10px; font-weight:800; color:#0055a0; letter-spacing:3px; text-transform:uppercase; white-space:nowrap; font-family:'Montserrat',sans-serif; }
 .products-grid {
   display:grid; gap:9px;
-  flex:1;                  /* grid fills remaining section height */
-  align-content:stretch;   /* rows stretch to fill — no blank space */
-  min-height:0;
+  flex:1; min-height:0;
+  /* grid-template-rows set by JS fitGrid() for exact filling */
 }
 .product-card {
   border:1px solid #e8edf2; border-radius:9px; padding:9px 7px 8px;
@@ -637,6 +637,7 @@ function buildGrid() {
 
   document.getElementById('rVal').textContent = gRows;
   document.getElementById('cVal').textContent = gCols;
+  requestAnimationFrame(fitGrid); // recalculate row heights
 }
 
 /* ════════════════════════════════════════════════════
@@ -646,6 +647,7 @@ function changeGrid(axis, delta) {
   if (axis==='r') gRows = Math.max(1, Math.min(10, gRows+delta));
   else            gCols = Math.max(1, Math.min(6,  gCols+delta));
   buildGrid();
+  requestAnimationFrame(fitGrid);
 }
 
 /* ════════════════════════════════════════════════════
@@ -915,10 +917,32 @@ function downloadPDF() {
 }
 
 /* ════════════════════════════════════════════════════
+   FIT GRID — calculate exact row heights to fill page
+════════════════════════════════════════════════════ */
+function fitGrid() {
+  const grid    = document.getElementById('productsGrid');
+  const section = document.querySelector('.products-section');
+  const hdr     = document.querySelector('.prod-section-hdr');
+  if (!grid || !section || !hdr) return;
+
+  // Available height = section height - header height - top padding - bottom padding
+  const secH    = section.clientHeight;
+  const hdrH    = hdr.offsetHeight + 11; /* height + margin-bottom */
+  const padV    = 14 + 12;               /* padding top + bottom */
+  const gapH    = 9 * (gRows - 1);       /* gaps between rows */
+  const availH  = secH - hdrH - padV;
+  const rowH    = Math.max(60, Math.floor((availH - gapH) / gRows));
+
+  grid.style.gridTemplateRows = `repeat(${gRows}, ${rowH}px)`;
+}
+
+/* ════════════════════════════════════════════════════
    INIT
 ════════════════════════════════════════════════════ */
 buildGrid();
 initDrag();
+requestAnimationFrame(fitGrid);
+window.addEventListener('resize', fitGrid);
 </script>
 
 </body>
