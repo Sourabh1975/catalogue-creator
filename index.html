@@ -388,7 +388,7 @@ body.edit-mode [contenteditable="true"]:focus {
     <div class="tb-brand-icon">💧</div>
     <div class="tb-brand-text">
       <h2>Catalogue Creator</h2>
-      <p>Edit Mode on karo → design karo → Download PDF</p>
+      <p>Enable Edit Mode → Design → Download PDF</p>
     </div>
   </div>
   <div class="tb-divider"></div>
@@ -478,7 +478,7 @@ body.edit-mode [contenteditable="true"]:focus {
       <div id="heroPh" onclick="pickHeroImg()">
         <span class="ph-ico">📷</span>
         <span class="ph-txt">Click to Upload Hero Background Image</span>
-        <span class="ph-sub">Image poore dark background ko fill karegi</span>
+        <span class="ph-sub">Image will fill the entire dark background</span>
       </div>
 
       <!-- Change btn -->
@@ -868,9 +868,9 @@ function toggleEdit() {
   const hint = document.getElementById('tb-hint');
 
   if (editMode) {
-    btn.textContent='✅ Edit Mode ON'; btn.classList.add('active');
-    hint.textContent='🖊 Drag elements • Click text to edit • Sidebar se shapes/grid control karo';
-    hint.style.color='#86efac';
+    btn.textContent = '✅ Edit Mode ON'; btn.classList.add('active');
+    hint.textContent = '🖊 Drag elements • Click text to edit • Use sidebar for shapes & grid';
+    hint.style.color = '#86efac';
     updateLayers();
   } else {
     btn.textContent='✏️ Edit Mode'; btn.classList.remove('active');
@@ -918,7 +918,7 @@ function pickProdImg(i) {
 ════════════════════════════════════════════════════ */
 function downloadPDF() {
   if (editMode) toggleEdit();
-  alert('🖨️ Print Tips:\n\n✅ Destination → Save as PDF\n✅ "Background graphics" checkbox → ZAROOR CHECK KARO\n   (warna hero image print nahi hogi)\n\nOK dabao phir Save karo!');
+  alert('🖨️ Print Tips:\n\n✅ Destination → Save as PDF\n✅ "Background graphics" checkbox → MUST BE CHECKED\n   (otherwise hero image won\'t print)\n\nClick OK then Save!');
   setTimeout(()=>window.print(), 300);
 }
 
