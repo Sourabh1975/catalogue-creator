@@ -66,10 +66,20 @@ body { font-family:'Inter',sans-serif; background:#111827; min-height:100vh; ove
   position:sticky; top:70px; max-height:calc(100vh - 80px); overflow-y:auto;
 }
 body.edit-mode #editor-panel { display:flex; }
+/* Sidebar scrollbar styling */
+#editor-panel {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99,179,237,.35) transparent;
+}
+#editor-panel::-webkit-scrollbar { width: 5px; }
+#editor-panel::-webkit-scrollbar-track { background: rgba(255,255,255,.04); border-radius:3px; }
+#editor-panel::-webkit-scrollbar-thumb { background: rgba(99,179,237,.35); border-radius:3px; }
+#editor-panel::-webkit-scrollbar-thumb:hover { background: rgba(99,179,237,.6); }
 
 .ep-card {
   background:#1f2937; border:1px solid rgba(255,255,255,0.07);
   border-radius:10px; overflow:hidden;
+  flex-shrink:0; /* Never compress — sidebar scrolls instead */
 }
 .ep-title {
   background:rgba(255,255,255,0.04); padding:7px 11px;
@@ -106,7 +116,7 @@ body.edit-mode #editor-panel { display:flex; }
 .s-lbl { font-size:9px; color:rgba(255,255,255,0.55); font-weight:600; }
 
 /* Layers list */
-#layersList { display:flex; flex-direction:column; gap:4px; max-height:180px; overflow-y:auto; }
+#layersList { display:flex; flex-direction:column; gap:4px; max-height:130px; overflow-y:auto; }
 .layer-item {
   display:flex; align-items:center; gap:6px; padding:5px 7px;
   border-radius:6px; cursor:pointer; transition:background .15s;
@@ -377,6 +387,74 @@ body.edit-mode [contenteditable="true"]:focus {
   outline:2px solid #60a5fa; background:rgba(96,165,250,.08); border-radius:3px;
 }
 
+/* ═══════════════════════════════════════════ PROPERTIES PANEL */
+.pp-empty { font-size:10px; color:rgba(255,255,255,.28); text-align:center; padding:12px 6px; }
+.pp-group { margin-bottom:12px; }
+.pp-group-title {
+  font-size:9px; font-weight:700; color:rgba(255,255,255,.38); text-transform:uppercase;
+  letter-spacing:1.5px; margin-bottom:7px; padding-bottom:4px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+.pp-row { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
+.pp-label { font-size:10px; color:rgba(255,255,255,.5); width:72px; flex-shrink:0; }
+.pp-input {
+  flex:1; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11);
+  border-radius:5px; padding:4px 7px; font-size:11px; color:white;
+  font-family:'Inter',sans-serif; min-width:0;
+}
+.pp-input:focus { border-color:rgba(96,165,250,.5); outline:none; background:rgba(255,255,255,.11); }
+.pp-color {
+  width:34px; height:26px; padding:2px 3px; border-radius:5px;
+  border:1px solid rgba(255,255,255,.15); cursor:pointer; background:transparent;
+}
+.pp-select {
+  flex:1; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11);
+  border-radius:5px; padding:4px 5px; font-size:11px; color:white;
+  font-family:'Inter',sans-serif; cursor:pointer;
+}
+.pp-select option { background:#1e2d47; color:white; }
+.pp-btn {
+  padding:4px 10px; border:1px solid rgba(255,255,255,.15); border-radius:5px;
+  background:rgba(255,255,255,.07); color:rgba(255,255,255,.7);
+  font-size:10px; cursor:pointer; transition:all .15s; white-space:nowrap;
+}
+.pp-btn:hover { background:rgba(255,255,255,.13); color:white; }
+.pp-btn-danger { border-color:rgba(239,68,68,.35); color:rgba(239,68,68,.7); }
+.pp-btn-danger:hover { background:rgba(239,68,68,.12); color:#f87171; }
+.pp-btn-add {
+  width:100%; justify-content:center; margin-top:5px;
+  border-color:rgba(74,222,128,.3); color:rgba(74,222,128,.75);
+}
+.pp-btn-add:hover { background:rgba(74,222,128,.1); color:#4ade80; }
+.pp-sub-item {
+  display:flex; gap:5px; align-items:center; margin-bottom:4px;
+  background:rgba(255,255,255,.04); border-radius:5px; padding:4px 6px;
+}
+.pp-sub-item input {
+  flex:1; background:transparent; border:none; color:rgba(255,255,255,.8);
+  font-size:10px; font-family:'Inter',sans-serif; outline:none; min-width:0;
+}
+.pp-sub-item input:focus { color:white; }
+.pp-sub-del {
+  width:18px; height:18px; border:none; background:none;
+  color:rgba(239,68,68,.5); cursor:pointer; font-size:14px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:3px; flex-shrink:0; line-height:1;
+}
+.pp-sub-del:hover { color:#f87171; background:rgba(239,68,68,.1); }
+.pp-sub-lbl { font-size:9px; color:rgba(255,255,255,.3); width:30px; flex-shrink:0; }
+
+/* Scrollable prop panel body */
+#prop-panel-body {
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96,165,250,.4) transparent;
+}
+#prop-panel-body::-webkit-scrollbar { width: 4px; }
+#prop-panel-body::-webkit-scrollbar-track { background: transparent; }
+#prop-panel-body::-webkit-scrollbar-thumb { background: rgba(96,165,250,.4); border-radius: 4px; }
+
 /* ═══════════════════════════════════════════ MOBILE RESPONSIVE */
 @media (max-width: 1050px) {
   #main-layout { flex-direction: column; align-items: center; padding: 16px; gap:24px; }
@@ -525,6 +603,14 @@ body.edit-mode [contenteditable="true"]:focus {
       </div>
     </div>
 
+    <!-- Properties Panel -->
+    <div class="ep-card" id="prop-card" style="display:none;">
+      <div class="ep-title">⚙️ Properties</div>
+      <div class="ep-body" id="prop-panel-body" style="padding:8px;">
+        <div class="pp-empty">Select an element to edit its properties</div>
+      </div>
+    </div>
+
   </div>
   <!-- END SIDEBAR -->
 
@@ -552,7 +638,7 @@ body.edit-mode [contenteditable="true"]:focus {
       <!-- ── DRAGGABLE ELEMENTS ── -->
 
       <!-- Series -->
-      <div class="hero-el" id="el-series" data-name="Series Name" style="left:22px;top:18px;">
+      <div class="hero-el" id="el-series" data-name="Series Name" data-type="series" style="left:22px;top:18px;">
         <div class="el-handle">⠿</div>
         <button class="el-del" onclick="deleteEl('el-series')">×</button>
         <div>
@@ -562,7 +648,7 @@ body.edit-mode [contenteditable="true"]:focus {
       </div>
 
       <!-- Brand Box -->
-      <div class="hero-el" id="el-brand" data-name="Brand Box" style="right:22px;top:18px;">
+      <div class="hero-el" id="el-brand" data-name="Brand Box" data-type="brand" style="right:22px;top:18px;">
         <div class="el-handle">⠿</div>
         <button class="el-del" onclick="deleteEl('el-brand')">×</button>
         <div class="brand-box">
@@ -572,7 +658,7 @@ body.edit-mode [contenteditable="true"]:focus {
       </div>
 
       <!-- Warranty -->
-      <div class="hero-el" id="el-warranty" data-name="Warranty Badge" style="left:22px;top:88px;">
+      <div class="hero-el" id="el-warranty" data-name="Warranty Badge" data-type="warranty" style="left:22px;top:88px;">
         <div class="el-handle">⠿</div>
         <button class="el-del" onclick="deleteEl('el-warranty')">×</button>
         <div class="warranty-badge">
@@ -582,7 +668,7 @@ body.edit-mode [contenteditable="true"]:focus {
       </div>
 
       <!-- Features -->
-      <div class="hero-el" id="el-features" data-name="Features List" style="left:22px;top:185px;">
+      <div class="hero-el" id="el-features" data-name="Features List" data-type="features" style="left:22px;top:185px;">
         <div class="el-handle">⠿</div>
         <button class="el-del" onclick="deleteEl('el-features')">×</button>
         <div class="features-list">
@@ -595,7 +681,7 @@ body.edit-mode [contenteditable="true"]:focus {
       </div>
 
       <!-- Specs Card -->
-      <div class="hero-el" id="el-specs" data-name="Specs Card" style="left:22px;top:348px;">
+      <div class="hero-el" id="el-specs" data-name="Specs Card" data-type="specs" style="left:22px;top:348px;">
         <div class="el-handle">⠿</div>
         <button class="el-del" onclick="deleteEl('el-specs')">×</button>
         <div class="specs-card">
@@ -606,7 +692,7 @@ body.edit-mode [contenteditable="true"]:focus {
       </div>
 
       <!-- 360 badge -->
-      <div class="hero-el" id="el-360" data-name="360° Badge" style="right:22px;top:105px;">
+      <div class="hero-el" id="el-360" data-name="360° Badge" data-type="badge360" style="right:22px;top:105px;">
         <div class="el-handle">⠿</div>
         <button class="el-del" onclick="deleteEl('el-360')">×</button>
         <div class="badge-360">
@@ -616,14 +702,14 @@ body.edit-mode [contenteditable="true"]:focus {
       </div>
 
       <!-- Bottom label -->
-      <div class="hero-el" id="el-btmlbl" data-name="Bottom Label" style="left:220px;top:410px;">
+      <div class="hero-el" id="el-btmlbl" data-name="Bottom Label" data-type="bottomlbl" style="left:220px;top:410px;">
         <div class="el-handle">⠿</div>
         <button class="el-del" onclick="deleteEl('el-btmlbl')">×</button>
         <div class="hero-btm-label" contenteditable="false">★ Honeycomb Foam Flow Technology ★</div>
       </div>
 
       <!-- Product Info -->
-      <div class="hero-el" id="el-prodinfo" data-name="Product Info" style="right:22px;top:320px;text-align:right;">
+      <div class="hero-el" id="el-prodinfo" data-name="Product Info" data-type="prodinfo" style="right:22px;top:320px;text-align:right;">
         <div class="el-handle">⠿</div>
         <button class="el-del" onclick="deleteEl('el-prodinfo')">×</button>
         <div class="hero-prod-name"   contenteditable="false">Wall Mixer</div>
@@ -822,6 +908,382 @@ function activateEl(id) {
   const el = document.getElementById(id);
   if (el) el.classList.add('active-el');
   updateLayers();
+  showProperties(id);
+}
+
+/* ════════════════════════════════════════════════════
+   PROPERTY PANEL — helpers
+════════════════════════════════════════════════════ */
+function ppSS(id, prop, val) { // set style on wrapper
+  const el = document.getElementById(id); if (el) el.style[prop] = val;
+}
+function ppIS(id, sel, prop, val) { // set style on inner element
+  const el = document.getElementById(id); if (!el) return;
+  const inn = el.querySelector(sel); if (inn) inn.style[prop] = val;
+}
+function ppAS(id, sel, prop, val) { // set style on all matching inner
+  const el = document.getElementById(id); if (!el) return;
+  el.querySelectorAll(sel).forEach(e => e.style[prop] = val);
+}
+function ppIT(id, sel, val) { // set textContent on inner
+  const el = document.getElementById(id); if (!el) return;
+  const inn = el.querySelector(sel); if (inn) inn.textContent = val;
+}
+function ppRow(label, control) {
+  return `<div class="pp-row"><span class="pp-label">${label}</span>${control}</div>`;
+}
+function ppInput(val, onchange, type='text') {
+  return `<input class="pp-input" type="${type}" value="${val}" onchange="${onchange}">`;
+}
+function ppColor(val, onchange) {
+  return `<input class="pp-color" type="color" value="${val||'#ffffff'}" oninput="${onchange}">`;
+}
+function ppSelect(options, selected, onchange) {
+  return `<select class="pp-select" onchange="${onchange}">${options.map(o=>`<option value="${o.v}" ${o.v==selected?'selected':''}>${o.l}</option>`).join('')}</select>`;
+}
+function commonProps(id, el) {
+  const x = Math.round(parseFloat(el.style.left)||0);
+  const y = Math.round(parseFloat(el.style.top)||0);
+  const op = Math.round(parseFloat(el.style.opacity||1)*100);
+  return `<div class="pp-group">
+    <div class="pp-group-title">📍 Position &amp; Visibility</div>
+    ${ppRow('X (px)', ppInput(x,`ppSS('${id}','left',this.value+'px')`,'number'))}
+    ${ppRow('Y (px)', ppInput(y,`ppSS('${id}','top',this.value+'px')`,'number'))}
+    ${ppRow('Opacity %', ppInput(op,`ppSS('${id}','opacity',this.value/100)`,'number'))}
+  </div>`;
+}
+
+/* ════════════════════════════════════════════════════
+   PROPERTY PANEL — type builders
+════════════════════════════════════════════════════ */
+function ppBuildSeries(id, el) {
+  const name = el.querySelector('.series-name');
+  const sub  = el.querySelector('.series-sub');
+  const fz   = parseFloat(name?.style.fontSize) || 46;
+  const sfz  = parseFloat(sub?.style.fontSize)  || 13;
+  const col  = name?.style.color || 'white';
+  return `<div class="pp-group">
+    <div class="pp-group-title">🔤 Series Name</div>
+    ${ppRow('Font Size', ppInput(fz,`ppIS('${id}','.series-name','fontSize',this.value+'px')`,'number'))}
+    ${ppRow('Color', ppColor(col,`ppIS('${id}','.series-name','color',this.value)`))}
+  </div>
+  <div class="pp-group">
+    <div class="pp-group-title">🔤 Series Subtitle</div>
+    ${ppRow('Font Size', ppInput(sfz,`ppIS('${id}','.series-sub','fontSize',this.value+'px')`,'number'))}
+    ${ppRow('Color', ppColor(sub?.style.color||'rgba(255,255,255,0.65)',`ppIS('${id}','.series-sub','color',this.value)`))}
+    ${ppRow('Letter Spacing', ppInput(parseFloat(sub?.style.letterSpacing)||7,`ppIS('${id}','.series-sub','letterSpacing',this.value+'px')`,'number'))}
+  </div>`;
+}
+
+function ppBuildBrand(id, el) {
+  const box  = el.querySelector('.brand-box');
+  const bg   = box?.style.backgroundColor || '#ffffff';
+  const brad = parseFloat(box?.style.borderRadius) || 10;
+  const nfz  = parseFloat(el.querySelector('.bname')?.style.fontSize) || 17;
+  const tfz  = parseFloat(el.querySelector('.btag')?.style.fontSize)  || 8;
+  return `<div class="pp-group">
+    <div class="pp-group-title">📦 Box Style</div>
+    ${ppRow('Background', ppColor(bg,`ppIS('${id}','.brand-box','backgroundColor',this.value)`))}
+    ${ppRow('Border Radius', ppInput(brad,`ppIS('${id}','.brand-box','borderRadius',this.value+'px')`,'number'))}
+  </div>
+  <div class="pp-group">
+    <div class="pp-group-title">🔤 Brand Name</div>
+    ${ppRow('Font Size', ppInput(nfz,`ppIS('${id}','.bname','fontSize',this.value+'px')`,'number'))}
+    ${ppRow('Color', ppColor(el.querySelector('.bname')?.style.color||'#0055a0',`ppIS('${id}','.bname','color',this.value)`))}
+  </div>
+  <div class="pp-group">
+    <div class="pp-group-title">🔤 Tagline</div>
+    ${ppRow('Font Size', ppInput(tfz,`ppIS('${id}','.btag','fontSize',this.value+'px')`,'number'))}
+    ${ppRow('Color', ppColor(el.querySelector('.btag')?.style.color||'#666666',`ppIS('${id}','.btag','color',this.value)`))}
+  </div>`;
+}
+
+function ppBuildWarranty(id, el) {
+  const badge = el.querySelector('.warranty-badge');
+  const w = parseFloat(badge?.style.width)  || 82;
+  const h = parseFloat(badge?.style.height) || 82;
+  const nfz = parseFloat(el.querySelector('.w-num')?.style.fontSize)  || 24;
+  const tfz = parseFloat(el.querySelector('.w-text')?.style.fontSize) || 7.5;
+  return `<div class="pp-group">
+    <div class="pp-group-title">🔴 Badge Size</div>
+    ${ppRow('Width (px)', ppInput(w,`ppIS('${id}','.warranty-badge','width',this.value+'px');ppIS('${id}','.warranty-badge','height',this.value+'px')`,'number'))}
+  </div>
+  <div class="pp-group">
+    <div class="pp-group-title">🔢 Number</div>
+    ${ppRow('Font Size', ppInput(nfz,`ppIS('${id}','.w-num','fontSize',this.value+'px')`,'number'))}
+    ${ppRow('Color', ppColor(el.querySelector('.w-num')?.style.color||'#ffffff',`ppIS('${id}','.w-num','color',this.value)`))}
+  </div>
+  <div class="pp-group">
+    <div class="pp-group-title">🔤 Label Text</div>
+    ${ppRow('Font Size', ppInput(tfz,`ppIS('${id}','.w-text','fontSize',this.value+'px')`,'number'))}
+    ${ppRow('Color', ppColor(el.querySelector('.w-text')?.style.color||'#ffffff',`ppIS('${id}','.w-text','color',this.value)`))}
+  </div>`;
+}
+
+function ppBuildFeatures(id, el) {
+  const items = el.querySelectorAll('.feat-item');
+  let rows = '';
+  items.forEach((item, i) => {
+    const txt = item.querySelector('.feat-text')?.textContent || '';
+    rows += `<div class="pp-sub-item">
+      <span class="pp-sub-lbl">#${i+1}</span>
+      <input value="${txt.replace(/"/g,'&quot;')}" 
+        onchange="ppFeatureText('${id}',${i},this.value)">
+      <button class="pp-sub-del" onclick="ppDelFeature('${id}',${i})">×</button>
+    </div>`;
+  });
+  const dotColor = el.querySelector('.feat-dot')?.style.color || '#7fde97';
+  const textColor = el.querySelector('.feat-text')?.style.color || 'rgba(255,255,255,0.88)';
+  const fz = parseFloat(el.querySelector('.feat-text')?.style.fontSize) || 9.5;
+  return `<div class="pp-group">
+    <div class="pp-group-title">✅ Feature Items</div>
+    <div id="pp-feats-${id}">${rows}</div>
+    <button class="pp-btn pp-btn-add" onclick="ppAddFeature('${id}')">＋ Add Feature</button>
+  </div>
+  <div class="pp-group">
+    <div class="pp-group-title">🎨 Style</div>
+    ${ppRow('Dot Color', ppColor(dotColor,`ppAS('${id}','.feat-dot','color',this.value)`))}
+    ${ppRow('Text Color', ppColor(textColor,`ppAS('${id}','.feat-text','color',this.value)`))}
+    ${ppRow('Font Size', ppInput(fz,`ppAS('${id}','.feat-text','fontSize',this.value+'px')`,'number'))}
+  </div>`;
+}
+
+function ppBuildSpecs(id, el) {
+  const rows = el.querySelectorAll('.spec-row');
+  let html = '';
+  rows.forEach((row, i) => {
+    const lbl = row.querySelector('.spec-lbl')?.textContent || '';
+    const val = row.querySelectorAll('span')[1]?.textContent || '';
+    html += `<div class="pp-sub-item">
+      <input style="width:42px;flex:none" value="${lbl.replace(/"/g,'&quot;')}" 
+        onchange="ppSpecLabel('${id}',${i},this.value)" placeholder="Label">
+      <input value="${val.replace(/"/g,'&quot;')}"
+        onchange="ppSpecValue('${id}',${i},this.value)" placeholder="Value">
+      <button class="pp-sub-del" onclick="ppDelSpec('${id}',${i})">×</button>
+    </div>`;
+  });
+  const lblColor = el.querySelector('.spec-lbl')?.style.color || '#7fdecc';
+  return `<div class="pp-group">
+    <div class="pp-group-title">📋 Spec Rows</div>
+    <div id="pp-specs-${id}">${html}</div>
+    <button class="pp-btn pp-btn-add" onclick="ppAddSpec('${id}')">＋ Add Spec Row</button>
+  </div>
+  <div class="pp-group">
+    <div class="pp-group-title">🎨 Style</div>
+    ${ppRow('Label Color', ppColor(lblColor,`ppAS('${id}','.spec-lbl','color',this.value)`))}
+    ${ppRow('Value Color', ppColor('#cccccc',`ppAS('${id}','.spec-row span:nth-child(2)','color',this.value)`))}
+  </div>`;
+}
+
+function ppBuildBadge360(id, el) {
+  const badge = el.querySelector('.badge-360');
+  const w = parseFloat(badge?.style.width)  || 68;
+  const nfz = parseFloat(el.querySelector('.b360-num')?.style.fontSize)  || 19;
+  const tfz = parseFloat(el.querySelector('.b360-text')?.style.fontSize) || 7;
+  return `<div class="pp-group">
+    <div class="pp-group-title">⭕ Badge Size</div>
+    ${ppRow('Size (px)', ppInput(w,`ppIS('${id}','.badge-360','width',this.value+'px');ppIS('${id}','.badge-360','height',this.value+'px')`,'number'))}
+    ${ppRow('Border Color', ppColor('#ffffff',`ppIS('${id}','.badge-360','borderColor',this.value)`))}
+  </div>
+  <div class="pp-group">
+    <div class="pp-group-title">🔢 Number</div>
+    ${ppRow('Font Size', ppInput(nfz,`ppIS('${id}','.b360-num','fontSize',this.value+'px')`,'number'))}
+    ${ppRow('Color', ppColor(el.querySelector('.b360-num')?.style.color||'#ffd54f',`ppIS('${id}','.b360-num','color',this.value)`))}
+  </div>
+  <div class="pp-group">
+    <div class="pp-group-title">🔤 Label</div>
+    ${ppRow('Font Size', ppInput(tfz,`ppIS('${id}','.b360-text','fontSize',this.value+'px')`,'number'))}
+    ${ppRow('Color', ppColor(el.querySelector('.b360-text')?.style.color||'rgba(255,255,255,0.75)',`ppIS('${id}','.b360-text','color',this.value)`))}
+  </div>`;
+}
+
+function ppBuildBottomLbl(id, el) {
+  const lbl = el.querySelector('.hero-btm-label');
+  const fz = parseFloat(lbl?.style.fontSize) || 7.5;
+  const ls = parseFloat(lbl?.style.letterSpacing) || 2.5;
+  return `<div class="pp-group">
+    <div class="pp-group-title">🔤 Label Style</div>
+    ${ppRow('Font Size', ppInput(fz,`ppIS('${id}','.hero-btm-label','fontSize',this.value+'px')`,'number'))}
+    ${ppRow('Color', ppColor(lbl?.style.color||'rgba(255,255,255,0.4)',`ppIS('${id}','.hero-btm-label','color',this.value)`))}
+    ${ppRow('Letter Spacing', ppInput(ls,`ppIS('${id}','.hero-btm-label','letterSpacing',this.value+'px')`,'number'))}
+  </div>`;
+}
+
+function ppBuildProdInfo(id, el) {
+  const nfz  = parseFloat(el.querySelector('.hero-prod-name')?.style.fontSize)   || 24;
+  const dfz  = parseFloat(el.querySelector('.hero-prod-detail')?.style.fontSize) || 11;
+  const mfz  = parseFloat(el.querySelector('.hero-prod-mrp')?.style.fontSize)    || 17;
+  return `<div class="pp-group">
+    <div class="pp-group-title">📦 Product Name</div>
+    ${ppRow('Font Size', ppInput(nfz,`ppIS('${id}','.hero-prod-name','fontSize',this.value+'px')`,'number'))}
+    ${ppRow('Color', ppColor(el.querySelector('.hero-prod-name')?.style.color||'#ffffff',`ppIS('${id}','.hero-prod-name','color',this.value)`))}
+  </div>
+  <div class="pp-group">
+    <div class="pp-group-title">📝 Detail Text</div>
+    ${ppRow('Font Size', ppInput(dfz,`ppIS('${id}','.hero-prod-detail','fontSize',this.value+'px')`,'number'))}
+    ${ppRow('Color', ppColor(el.querySelector('.hero-prod-detail')?.style.color||'rgba(255,255,255,0.75)',`ppIS('${id}','.hero-prod-detail','color',this.value)`))}
+  </div>
+  <div class="pp-group">
+    <div class="pp-group-title">💰 MRP Text</div>
+    ${ppRow('Font Size', ppInput(mfz,`ppIS('${id}','.hero-prod-mrp','fontSize',this.value+'px')`,'number'))}
+    ${ppRow('Color', ppColor(el.querySelector('.hero-prod-mrp')?.style.color||'#ffd54f',`ppIS('${id}','.hero-prod-mrp','color',this.value)`))}
+  </div>`;
+}
+
+function ppBuildShape(id, el) {
+  const shape = el.querySelector('.cshape, [style*="border-left"]');
+  const inner = el.querySelector('.shape-inner');
+  const isTri = !!el.querySelector('[style*="border-left"]');
+  const w   = parseFloat(shape?.style.width)        || 110;
+  const h   = parseFloat(shape?.style.height)       || 65;
+  const br  = parseFloat(shape?.style.borderRadius) || 0;
+  const bw  = parseFloat(shape?.style.borderWidth)  || 0;
+  const ifz = parseFloat(inner?.style.fontSize)     || 10;
+  if (isTri) return `<div class="pp-group">
+    <div class="pp-group-title">🔺 Triangle Color</div>
+    ${ppRow('Color', ppColor('#eab308',`ppIS('${id}','[style*=border-left]','borderBottomColor',this.value)`))}
+  </div>`;
+  return `<div class="pp-group">
+    <div class="pp-group-title">📐 Size</div>
+    ${ppRow('Width (px)', ppInput(w,`ppIS('${id}','.cshape','width',this.value+'px')`,'number'))}
+    ${ppRow('Height (px)', ppInput(h,`ppIS('${id}','.cshape','height',this.value+'px')`,'number'))}
+  </div>
+  <div class="pp-group">
+    <div class="pp-group-title">🎨 Appearance</div>
+    ${ppRow('Background', ppColor('#3b82f6',`ppIS('${id}','.cshape','backgroundColor',this.value)`))}
+    ${ppRow('Border Radius', ppInput(br,`ppIS('${id}','.cshape','borderRadius',this.value+'px')`,'number'))}
+    ${ppRow('Border Width', ppInput(bw,`ppIS('${id}','.cshape','borderWidth',this.value+'px')`,'number'))}
+    ${ppRow('Border Color', ppColor('#ffffff',`ppIS('${id}','.cshape','borderColor',this.value)`))}
+  </div>
+  ${inner ? `<div class="pp-group">
+    <div class="pp-group-title">🔤 Inner Text</div>
+    ${ppRow('Font Size', ppInput(ifz,`ppIS('${id}','.shape-inner','fontSize',this.value+'px')`,'number'))}
+    ${ppRow('Color', ppColor(inner.style.color||'#ffffff',`ppIS('${id}','.shape-inner','color',this.value)`))}
+  </div>` : ''}`;
+}
+
+function ppBuildText(id, el) {
+  const txt = el.querySelector('[style*="font-size"], div, span');
+  const fz  = parseFloat(txt?.style.fontSize)  || 18;
+  const fw  = txt?.style.fontWeight || '700';
+  const ls  = parseFloat(txt?.style.letterSpacing) || 0;
+  return `<div class="pp-group">
+    <div class="pp-group-title">🔤 Text Style</div>
+    ${ppRow('Font Size', ppInput(fz,`ppIS('${id}','[contenteditable]','fontSize',this.value+'px')`,'number'))}
+    ${ppRow('Color', ppColor(txt?.style.color||'#ffffff',`ppIS('${id}','[contenteditable]','color',this.value)`))}
+    ${ppRow('Font Weight', ppSelect([{v:'400',l:'Regular'},{v:'600',l:'Semi-Bold'},{v:'700',l:'Bold'},{v:'800',l:'Extra Bold'},{v:'900',l:'Black'}],fw,`ppIS('${id}','[contenteditable]','fontWeight',this.value)`))}
+    ${ppRow('Letter Spacing', ppInput(ls,`ppIS('${id}','[contenteditable]','letterSpacing',this.value+'px')`,'number'))}
+  </div>`;
+}
+
+function ppBuildImgBox(id, el) {
+  const box = el.querySelector('[style*="border-radius"], div:last-child');
+  const w   = parseFloat(box?.style.width)        || 130;
+  const h   = parseFloat(box?.style.height)       || 110;
+  const br  = parseFloat(box?.style.borderRadius) || 10;
+  return `<div class="pp-group">
+    <div class="pp-group-title">📐 Size</div>
+    ${ppRow('Width (px)', ppInput(w,`ppIS('${id}','div:last-child','width',this.value+'px')`,'number'))}
+    ${ppRow('Height (px)', ppInput(h,`ppIS('${id}','div:last-child','height',this.value+'px')`,'number'))}
+    ${ppRow('Border Radius', ppInput(br,`ppIS('${id}','div:last-child','borderRadius',this.value+'px')`,'number'))}
+    ${ppRow('Border Color', ppColor('#ffffff',`ppIS('${id}','div:last-child','borderColor',this.value)`))}
+  </div>`;
+}
+
+/* ════════════════════════════════════════════════════
+   PROPERTY PANEL — main dispatcher
+════════════════════════════════════════════════════ */
+const PP_BUILDERS = {
+  series:   ppBuildSeries,
+  brand:    ppBuildBrand,
+  warranty: ppBuildWarranty,
+  features: ppBuildFeatures,
+  specs:    ppBuildSpecs,
+  badge360: ppBuildBadge360,
+  bottomlbl:ppBuildBottomLbl,
+  prodinfo: ppBuildProdInfo,
+  rect:     ppBuildShape,
+  circle:   ppBuildShape,
+  badge:    ppBuildShape,
+  triangle: ppBuildShape,
+  text:     ppBuildText,
+  imgbox:   ppBuildImgBox,
+};
+
+function showProperties(id) {
+  const el = document.getElementById(id);
+  const panel = document.getElementById('prop-panel-body');
+  const card  = document.getElementById('prop-card');
+  if (!el || !panel || !card) return;
+
+  card.style.display = '';
+  const type = el.dataset.type || 'text';
+  const builder = PP_BUILDERS[type] || (() => '');
+  panel.innerHTML = commonProps(id, el) + builder(id, el);
+}
+
+/* ════════════════════════════════════════════════════
+   PROPERTY PANEL — features list mutations
+════════════════════════════════════════════════════ */
+function ppFeatureText(id, idx, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const items = el.querySelectorAll('.feat-text');
+  if (items[idx]) items[idx].textContent = val;
+}
+function ppDelFeature(id, idx) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const items = el.querySelectorAll('.feat-item');
+  if (items[idx]) items[idx].remove();
+  showProperties(id); // refresh panel
+}
+function ppAddFeature(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const list = el.querySelector('.features-list');
+  if (!list) return;
+  const item = document.createElement('div');
+  item.className = 'feat-item';
+  item.innerHTML = `<div class="feat-dot">✓</div><div class="feat-text" contenteditable="${editMode?'true':'false'}">New Feature</div>`;
+  list.appendChild(item);
+  showProperties(id);
+}
+
+/* ════════════════════════════════════════════════════
+   PROPERTY PANEL — specs card mutations
+════════════════════════════════════════════════════ */
+function ppSpecLabel(id, idx, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const lbls = el.querySelectorAll('.spec-lbl');
+  if (lbls[idx]) lbls[idx].textContent = val;
+}
+function ppSpecValue(id, idx, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const rows = el.querySelectorAll('.spec-row');
+  if (!rows[idx]) return;
+  const spans = rows[idx].querySelectorAll('span');
+  if (spans[1]) spans[1].textContent = val;
+}
+function ppDelSpec(id, idx) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const rows = el.querySelectorAll('.spec-row');
+  if (rows[idx]) rows[idx].remove();
+  showProperties(id);
+}
+function ppAddSpec(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const card = el.querySelector('.specs-card');
+  if (!card) return;
+  const row = document.createElement('div');
+  row.className = 'spec-row';
+  row.innerHTML = `<span class="spec-lbl" contenteditable="${editMode?'true':'false'}">Label:</span><span contenteditable="${editMode?'true':'false'}">Value</span>`;
+  card.appendChild(row);
+  showProperties(id);
 }
 
 /* ════════════════════════════════════════════════════
@@ -831,6 +1293,9 @@ function deleteEl(id) {
   const el = document.getElementById(id);
   if (el) el.remove();
   updateLayers();
+  // Clear properties panel
+  const propCard = document.getElementById('prop-card');
+  if (propCard) propCard.style.display = 'none';
 }
 
 /* ════════════════════════════════════════════════════
@@ -915,6 +1380,7 @@ function addShape(type) {
   }
 
   wrap.dataset.name = name;
+  wrap.dataset.type = type;
   wrap.innerHTML = `
     <div class="el-handle">⠿</div>
     <button class="el-del" onclick="deleteEl('${id}')">×</button>
