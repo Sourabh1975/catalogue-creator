@@ -316,10 +316,11 @@ body.edit-mode .hero-el.active-el .el-handle { display:flex; }
 }
 .product-card:hover { border-color:#90caf9; box-shadow:0 4px 16px rgba(0,85,160,.1); transform:translateY(-1px); }
 .prod-img-box {
-  width:100%; flex:1;      /* image box grows to fill card */
-  min-height:60px; max-height:130px;
+  width:100%; flex:1;      /* grows freely with card height */
+  min-height:50px;         /* no max-height — let it scale */
   display:flex; align-items:center; justify-content:center;
-  margin-bottom:6px; cursor:pointer; border-radius:6px;
+  margin-bottom: calc(4px * var(--card-scale, 1));
+  cursor:pointer; border-radius:6px;
   position:relative; overflow:hidden;
 }
 .prod-img-box img { max-width:100%; max-height:100%; object-fit:contain; display:none; }
@@ -338,9 +339,24 @@ body.edit-mode .prod-img-box::after {
   padding:2px 4px; opacity:0; transition:opacity .2s;
 }
 body.edit-mode .prod-img-box:hover::after { opacity:1; }
-.prod-name    { font-size:9.5px; font-weight:700; color:#1a2340; text-align:center; line-height:1.4; margin-bottom:4px; font-family:'Montserrat',sans-serif; }
-.prod-mrp     { font-size:10px; font-weight:800; color:#0055a0; margin-bottom:2px; }
-.prod-packing { font-size:8px; color:#7a8ea8; font-weight:600; }
+.prod-name {
+  font-size: calc(9.5px * var(--card-scale, 1));
+  font-weight:700; color:#1a2340; text-align:center;
+  line-height:1.35; margin-bottom: calc(3px * var(--card-scale, 1));
+  font-family:'Montserrat',sans-serif;
+  flex-shrink: 0;
+}
+.prod-mrp {
+  font-size: calc(10px * var(--card-scale, 1));
+  font-weight:800; color:#0055a0;
+  margin-bottom: calc(2px * var(--card-scale, 1));
+  flex-shrink: 0;
+}
+.prod-packing {
+  font-size: calc(8px * var(--card-scale, 1));
+  color:#7a8ea8; font-weight:600;
+  flex-shrink: 0;
+}
 
 /* ═══════════════════════════════════════════ EDIT MODE */
 body.edit-mode [contenteditable="true"] {
@@ -925,15 +941,22 @@ function fitGrid() {
   const hdr     = document.querySelector('.prod-section-hdr');
   if (!grid || !section || !hdr) return;
 
-  // Available height = section height - header height - top padding - bottom padding
-  const secH    = section.clientHeight;
-  const hdrH    = hdr.offsetHeight + 11; /* height + margin-bottom */
-  const padV    = 14 + 12;               /* padding top + bottom */
-  const gapH    = 9 * (gRows - 1);       /* gaps between rows */
-  const availH  = secH - hdrH - padV;
-  const rowH    = Math.max(60, Math.floor((availH - gapH) / gRows));
+  const secH   = section.clientHeight;
+  const hdrH   = hdr.offsetHeight + 11;
+  const padV   = 14 + 12;
+  const gapH   = 9 * (gRows - 1);
+  const availH = secH - hdrH - padV;
+  const rowH   = Math.max(60, Math.floor((availH - gapH) / gRows));
 
   grid.style.gridTemplateRows = `repeat(${gRows}, ${rowH}px)`;
+
+  /* — Scale card content proportionally —
+     Base reference: 3 rows × 4 cols = rowH ~155px, scale = 1.0
+     When rowH is bigger → scale > 1 (bigger fonts, bigger image area)
+     When rowH is smaller → scale < 1 (smaller fonts) */
+  const BASE_ROW_H = 155;
+  const scale = Math.max(0.65, Math.min(2.0, rowH / BASE_ROW_H));
+  document.documentElement.style.setProperty('--card-scale', scale.toFixed(3));
 }
 
 /* ════════════════════════════════════════════════════
