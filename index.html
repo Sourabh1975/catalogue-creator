@@ -369,8 +369,8 @@ body.edit-mode [contenteditable="true"]:focus {
 
 /* ═══════════════════════════════════════════ PRINT */
 @media print {
-  *, *::before, *::after { print-color-adjust:exact !important; -webkit-print-color-adjust:exact !important; }
   body { background:white; }
+  .hero-el * { text-shadow:none !important; box-shadow:none !important; }
   #toolbar, #editor-panel, #heroChangBtn, .el-del, .el-handle { display:none !important; }
   #main-layout { padding:0; justify-content:center; }
   #catalogue { box-shadow:none; border-radius:0; width:100%; }
@@ -841,17 +841,14 @@ function addShape(type) {
 
 function pickShapeImg(imgId, container) {
   const inp = document.createElement('input');
-  inp.type='file'; inp.accept='image/*';
+  inp.type = 'file'; inp.accept = 'image/*';
   inp.onchange = e => {
     const f = e.target.files[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = ev => {
-      const img = document.getElementById(imgId);
-      const ph  = container.querySelector('span');
-      img.src=ev.target.result; img.style.display='block';
-      if (ph) ph.style.display='none';
-    };
-    r.readAsDataURL(f);
+    const img = document.getElementById(imgId);
+    const ph  = container.querySelector('span');
+    img.src = URL.createObjectURL(f);
+    img.style.display = 'block';
+    if (ph) ph.style.display = 'none';
   };
   inp.click();
 }
@@ -886,19 +883,15 @@ function toggleEdit() {
    HERO IMAGE
 ════════════════════════════════════════════════════ */
 function pickHeroImg() {
-  const inp=document.createElement('input');
-  inp.type='file'; inp.accept='image/*';
-  inp.onchange=e=>{
-    const f=e.target.files[0]; if (!f) return;
-    const r=new FileReader();
-    r.onload=ev=>{
-      const wrap=document.getElementById('heroBgWrap');
-      wrap.style.backgroundImage=`url('${ev.target.result}')`;
-      wrap.style.backgroundSize='cover'; wrap.style.backgroundPosition='center';
-      document.getElementById('heroPh').style.display='none';
-      document.getElementById('heroOverlay').style.display='block';
-    };
-    r.readAsDataURL(f);
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const wrap = document.getElementById('heroBgWrap');
+    wrap.style.backgroundImage = `url('${URL.createObjectURL(f)}')`;
+    wrap.style.backgroundSize = 'cover'; wrap.style.backgroundPosition = 'center';
+    document.getElementById('heroPh').style.display = 'none';
+    document.getElementById('heroOverlay').style.display = 'block';
   };
   inp.click();
 }
@@ -907,18 +900,15 @@ function pickHeroImg() {
    PRODUCT IMAGE
 ════════════════════════════════════════════════════ */
 function pickProdImg(i) {
-  const inp=document.createElement('input');
-  inp.type='file'; inp.accept='image/*';
-  inp.onchange=e=>{
-    const f=e.target.files[0]; if (!f) return;
-    const r=new FileReader();
-    r.onload=ev=>{
-      const img=document.getElementById(`pimg${i}`);
-      const ph =document.getElementById(`pph${i}`);
-      img.src=ev.target.result; img.style.display='block';
-      if (ph) ph.style.display='none';
-    };
-    r.readAsDataURL(f);
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const img = document.getElementById(`pimg${i}`);
+    const ph  = document.getElementById(`pph${i}`);
+    img.src = URL.createObjectURL(f);
+    img.style.display = 'block';
+    if (ph) ph.style.display = 'none';
   };
   inp.click();
 }
