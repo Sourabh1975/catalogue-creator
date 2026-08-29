@@ -664,6 +664,141 @@ body.edit-mode [contenteditable="true"]:focus {
       </div>
     </div>
 
+    <!-- Product Card Style -->
+    <div class="ep-card">
+      <div class="ep-title">📋 Product Card Style</div>
+      <div class="ep-body" style="padding:8px;max-height:320px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(96,165,250,.4) transparent;">
+
+        <div class="pp-group">
+          <div class="pp-group-title">🔤 Product Name</div>
+          <div class="pp-row">
+            <span class="pp-label">Color</span>
+            <input class="pp-color" type="color" value="#1a2340" id="pn-color"
+              oninput="setProdStyle('prod-name','color',this.value)">
+          </div>
+          <div class="pp-row">
+            <span class="pp-label">Font Size</span>
+            <input class="pp-input" type="number" value="9" min="6" max="24" id="pn-size"
+              oninput="setProdStyle('prod-name','fontSize',this.value+'px')">
+          </div>
+          <div class="pp-row">
+            <span class="pp-label">Weight</span>
+            <select class="pp-select" id="pn-weight"
+              onchange="setProdStyle('prod-name','fontWeight',this.value)">
+              <option value="400">Regular</option>
+              <option value="600">Semi-Bold</option>
+              <option value="700" selected>Bold</option>
+              <option value="800">Extra Bold</option>
+              <option value="900">Black</option>
+            </select>
+          </div>
+          <div class="pp-row">
+            <span class="pp-label">Style</span>
+            <div style="display:flex;gap:4px;">
+              <button class="pp-btn" onclick="setProdStyle('prod-name','fontStyle','normal')">Normal</button>
+              <button class="pp-btn" onclick="setProdStyle('prod-name','fontStyle','italic')">Italic</button>
+            </div>
+          </div>
+          <div class="pp-row">
+            <span class="pp-label">Align</span>
+            <div style="display:flex;gap:4px;">
+              <button class="pp-btn" onclick="setProdStyle('prod-name','textAlign','left')">L</button>
+              <button class="pp-btn" onclick="setProdStyle('prod-name','textAlign','center')">C</button>
+              <button class="pp-btn" onclick="setProdStyle('prod-name','textAlign','right')">R</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pp-group">
+          <div class="pp-group-title">💰 MRP Price</div>
+          <div class="pp-row">
+            <span class="pp-label">Color</span>
+            <input class="pp-color" type="color" value="#0055a0" id="mrp-color"
+              oninput="setProdStyle('prod-mrp','color',this.value)">
+          </div>
+          <div class="pp-row">
+            <span class="pp-label">Font Size</span>
+            <input class="pp-input" type="number" value="10" min="6" max="26" id="mrp-size"
+              oninput="setProdStyle('prod-mrp','fontSize',this.value+'px')">
+          </div>
+          <div class="pp-row">
+            <span class="pp-label">Weight</span>
+            <select class="pp-select" id="mrp-weight"
+              onchange="setProdStyle('prod-mrp','fontWeight',this.value)">
+              <option value="600">Semi-Bold</option>
+              <option value="700">Bold</option>
+              <option value="800" selected>Extra Bold</option>
+              <option value="900">Black</option>
+            </select>
+          </div>
+          <div class="pp-row">
+            <span class="pp-label">Style</span>
+            <div style="display:flex;gap:4px;">
+              <button class="pp-btn" onclick="setProdStyle('prod-mrp','fontStyle','normal')">Normal</button>
+              <button class="pp-btn" onclick="setProdStyle('prod-mrp','fontStyle','italic')">Italic</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pp-group">
+          <div class="pp-group-title">📦 Packing Text</div>
+          <div class="pp-row">
+            <span class="pp-label">Color</span>
+            <input class="pp-color" type="color" value="#7a8ea8" id="pk-color"
+              oninput="setProdStyle('prod-packing','color',this.value)">
+          </div>
+          <div class="pp-row">
+            <span class="pp-label">Font Size</span>
+            <input class="pp-input" type="number" value="8" min="6" max="20" id="pk-size"
+              oninput="setProdStyle('prod-packing','fontSize',this.value+'px')">
+          </div>
+          <div class="pp-row">
+            <span class="pp-label">Weight</span>
+            <select class="pp-select" id="pk-weight"
+              onchange="setProdStyle('prod-packing','fontWeight',this.value)">
+              <option value="400">Regular</option>
+              <option value="600" selected>Semi-Bold</option>
+              <option value="700">Bold</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pp-group">
+          <div class="pp-group-title">🃏 Card Appearance</div>
+          <div class="pp-row">
+            <span class="pp-label">Background</span>
+            <input class="pp-color" type="color" value="#fdfdff" id="card-bg"
+              oninput="setProdStyle('product-card','background',this.value)">
+          </div>
+          <div class="pp-row">
+            <span class="pp-label">Border</span>
+            <input class="pp-color" type="color" value="#e8edf2" id="card-border"
+              oninput="setProdStyle('product-card','borderColor',this.value)">
+          </div>
+          <div class="pp-row">
+            <span class="pp-label">Radius</span>
+            <input class="pp-input" type="number" value="9" min="0" max="30" id="card-radius"
+              oninput="setProdStyle('product-card','borderRadius',this.value+'px')">
+          </div>
+        </div>
+
+        <div class="pp-group">
+          <div class="pp-group-title">🅏 Section Title</div>
+          <div class="pp-row">
+            <span class="pp-label">Color</span>
+            <input class="pp-color" type="color" value="#0055a0" id="sec-color"
+              oninput="setProdStyle('psh-title','color',this.value)">
+          </div>
+          <div class="pp-row">
+            <span class="pp-label">Font Size</span>
+            <input class="pp-input" type="number" value="10" min="7" max="22" id="sec-size"
+              oninput="setProdStyle('psh-title','fontSize',this.value+'px')">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- Properties Panel -->
     <div class="ep-card" id="prop-card" style="display:none;">
       <div class="ep-title">⚙️ Properties</div>
@@ -1497,6 +1632,44 @@ function toggleEdit() {
 }
 
 /* ════════════════════════════════════════════════════
+   PRODUCT CARD STYLE
+════════════════════════════════════════════════════ */
+// Stores all card style overrides so save/load can persist them
+const cardStyles = {};
+
+function setProdStyle(cls, prop, val) {
+  document.querySelectorAll('.' + cls).forEach(el => el.style[prop] = val);
+  // Store for save
+  if (!cardStyles[cls]) cardStyles[cls] = {};
+  cardStyles[cls][prop] = val;
+}
+
+function applyCardStyles(styles) {
+  if (!styles) return;
+  Object.entries(styles).forEach(([cls, props]) => {
+    Object.entries(props).forEach(([prop, val]) => {
+      setProdStyle(cls, prop, val);
+      // Restore sidebar control values
+      const map = {
+        'prod-name':{'color':'pn-color','fontSize':'pn-size','fontWeight':'pn-weight'},
+        'prod-mrp': {'color':'mrp-color','fontSize':'mrp-size','fontWeight':'mrp-weight'},
+        'prod-packing':{'color':'pk-color','fontSize':'pk-size','fontWeight':'pk-weight'},
+        'product-card':{'background':'card-bg','borderColor':'card-border','borderRadius':'card-radius'},
+        'psh-title':{'color':'sec-color','fontSize':'sec-size'},
+      };
+      const ctrlId = map[cls]?.[prop];
+      if (ctrlId) {
+        const ctrl = document.getElementById(ctrlId);
+        if (ctrl) {
+          // fontSize comes back as "12px" — strip px for number inputs
+          ctrl.value = typeof val === 'string' ? val.replace('px','') : val;
+        }
+      }
+    });
+  });
+}
+
+/* ════════════════════════════════════════════════════
    HERO IMAGE
 ════════════════════════════════════════════════════ */
 function pickHeroImg() {
@@ -1684,6 +1857,9 @@ async function saveTemplate() {
       }
     }
 
+    // Card Styles
+    data.cardStyles = JSON.parse(JSON.stringify(cardStyles));
+
     const json = JSON.stringify(data);
     localStorage.setItem('cc_save_v3', json);
     const kb = (json.length / 1024).toFixed(0);
@@ -1789,6 +1965,8 @@ function loadTemplate(silent) {
 
     updateLayers();
     requestAnimationFrame(fitGrid);
+    // Restore card styles
+    if (data.cardStyles) applyCardStyles(data.cardStyles);
     if (!silent) showToast('📥 Template loaded!');
     return true;
   } catch(e) {
