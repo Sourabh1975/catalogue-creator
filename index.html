@@ -163,16 +163,7 @@ body.edit-mode #editor-panel { display:flex; }
   position:relative; overflow:hidden;
   print-color-adjust:exact; -webkit-print-color-adjust:exact;
 }
-.hero-glow {
-  position:absolute; top:50%; left:52%;
-  transform:translate(-50%,-56%);
-  width:480px; height:480px;
-  background:radial-gradient(ellipse at center,
-    rgba(255,252,228,.95) 0%,rgba(255,242,180,.75) 18%,
-    rgba(255,225,130,.4) 36%,rgba(255,200,80,.12) 55%,transparent 72%);
-  border-radius:50%; pointer-events:none; z-index:1;
-  print-color-adjust:exact; -webkit-print-color-adjust:exact;
-}
+/* hero-glow removed */
 #heroBgWrap {
   position:absolute; inset:0;
   background-size:cover; background-position:center; z-index:1;
@@ -508,6 +499,40 @@ body.edit-mode [contenteditable="true"]:focus {
   #layersList { max-height:130px; }
 }
 
+/* ═══════════════════════════════════════════ TOAST */
+#toast-container {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  z-index:99999; display:flex; flex-direction:column; align-items:center; gap:8px;
+  pointer-events:none;
+}
+.toast {
+  background:#1e3a5f; color:white; padding:10px 20px; border-radius:20px;
+  font-size:12px; font-weight:600; font-family:'Inter',sans-serif;
+  border:1px solid rgba(99,179,237,.35); box-shadow:0 8px 32px rgba(0,0,0,.5);
+  animation: toastIn .25s ease, toastOut .3s ease 2.5s forwards;
+  pointer-events:auto;
+}
+.toast.success { background:#14532d; border-color:rgba(74,222,128,.4); }
+.toast.error   { background:#7f1d1d; border-color:rgba(239,68,68,.4); }
+.tb-save {
+  background:linear-gradient(135deg,#1d4ed8,#1e40af); color:white;
+  box-shadow:0 2px 10px rgba(29,78,216,.35);
+}
+.tb-save:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(29,78,216,.5); }
+.tb-load { background:rgba(255,255,255,.08); color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.14); }
+.tb-load:hover { background:rgba(255,255,255,.14); }
+.tb-reset {
+  background:rgba(239,68,68,.12); color:rgba(248,113,113,.85);
+  border:1px solid rgba(239,68,68,.25);
+}
+.tb-reset:hover { background:rgba(239,68,68,.22); color:#f87171; border-color:rgba(239,68,68,.5); }
+.tb-export { background:rgba(16,185,129,.1); color:rgba(52,211,153,.85); border:1px solid rgba(16,185,129,.25); }
+.tb-export:hover { background:rgba(16,185,129,.2); color:#34d399; }
+.tb-import { background:rgba(168,85,247,.1); color:rgba(192,132,252,.85); border:1px solid rgba(168,85,247,.25); }
+.tb-import:hover { background:rgba(168,85,247,.2); color:#c084fc; }
+@keyframes toastIn  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+@keyframes toastOut { from { opacity:1; } to { opacity:0; pointer-events:none; } }
+
 /* ═══════════════════════════════════════════ PRINT */
 @media print {
   body { background:white; }
@@ -536,8 +561,17 @@ body.edit-mode [contenteditable="true"]:focus {
   <div class="tb-divider"></div>
   <button class="tb-btn tb-edit" id="editBtn" onclick="toggleEdit()">✏️ Edit Mode</button>
   <span id="tb-hint">OFF</span>
-  <button class="tb-btn tb-dl" onclick="downloadPDF()">⬇️ Download PDF</button>
+  <div class="tb-divider"></div>
+  <button class="tb-btn tb-save"   id="saveBtn" onclick="saveTemplate()"      title="Save to browser memory">💾 Save</button>
+  <button class="tb-btn tb-load"            onclick="loadTemplatePrompt()"   title="Load from browser memory">📂 Load</button>
+  <button class="tb-btn tb-export"          onclick="exportDesign()"          title="Download design as JSON file">⬇️ Export</button>
+  <button class="tb-btn tb-import"          onclick="importDesign()"          title="Upload a saved JSON design file">⬆️ Import</button>
+  <button class="tb-btn tb-reset"           onclick="resetTemplate()"         title="Reset everything to default">🔄 Reset</button>
+  <button class="tb-btn tb-dl" onclick="downloadPDF()">📄 Download PDF</button>
 </div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
 
 <!-- ═══════ MAIN LAYOUT ═══════ -->
 <div id="main-layout">
@@ -564,6 +598,33 @@ body.edit-mode [contenteditable="true"]:focus {
             <span class="g-val" id="cVal">4</span>
             <button class="g-btn" onclick="changeGrid('c',+1)">+</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero Background Settings -->
+    <div class="ep-card" id="hero-bg-card" style="overflow:visible;">
+      <div class="ep-title">🌄 Hero Background</div>
+      <div class="ep-body">
+        <div class="grid-row" style="flex-direction:column;align-items:flex-start;gap:5px;">
+          <div style="display:flex;justify-content:space-between;width:100%;">
+            <span class="grid-lbl">BG Opacity</span>
+            <span class="pp-range-val" id="heroBgOpacityVal" style="color:#60a5fa;font-weight:700;font-size:12px;">100%</span>
+          </div>
+          <input type="range" class="pp-range" id="heroBgOpacity"
+            min="0" max="100" value="100" style="width:100%;"
+            oninput="setHeroBgOpacity(this.value)">
+        </div>
+        <div class="grid-row" style="margin-top:8px;">
+          <span class="grid-lbl">Dark Overlay</span>
+          <div style="display:flex;gap:5px;">
+            <button class="pp-btn" onclick="toggleHeroOverlay(false)" id="ovrOff">Off</button>
+            <button class="pp-btn" onclick="toggleHeroOverlay(true)"  id="ovrOn">On</button>
+          </div>
+        </div>
+        <div class="grid-row" style="margin-top:6px;">
+          <span class="grid-lbl">Change BG</span>
+          <button class="pp-btn" onclick="pickHeroImg()">📷 Upload</button>
         </div>
       </div>
     </div>
@@ -623,7 +684,7 @@ body.edit-mode [contenteditable="true"]:focus {
 
       <div id="heroBgWrap"></div>
       <div id="heroOverlay"></div>
-      <div class="hero-glow"></div>
+      <!-- hero-glow removed -->
 
       <!-- Upload placeholder -->
       <div id="heroPh" onclick="pickHeroImg()">
@@ -1448,8 +1509,30 @@ function pickHeroImg() {
     wrap.style.backgroundSize = 'cover'; wrap.style.backgroundPosition = 'center';
     document.getElementById('heroPh').style.display = 'none';
     document.getElementById('heroOverlay').style.display = 'block';
+    // Reset opacity slider to 100%
+    const slider = document.getElementById('heroBgOpacity');
+    const val    = document.getElementById('heroBgOpacityVal');
+    if (slider) slider.value = 100;
+    if (val)    val.textContent = '100%';
+    wrap.style.opacity = '1';
   };
   inp.click();
+}
+
+function setHeroBgOpacity(v) {
+  document.getElementById('heroBgWrap').style.opacity = v / 100;
+  const lbl = document.getElementById('heroBgOpacityVal');
+  if (lbl) lbl.textContent = v + '%';
+  // Update slider gradient fill
+  const slider = document.getElementById('heroBgOpacity');
+  if (slider) slider.style.background =
+    `linear-gradient(to right,#3b82f6 ${v}%,rgba(255,255,255,.15) ${v}%)`;
+}
+
+function toggleHeroOverlay(on) {
+  document.getElementById('heroOverlay').style.display = on ? 'block' : 'none';
+  document.getElementById('ovrOn').style.background  = on  ? 'rgba(59,130,246,.35)' : '';
+  document.getElementById('ovrOff').style.background = !on ? 'rgba(59,130,246,.35)' : '';
 }
 
 /* ════════════════════════════════════════════════════
@@ -1514,12 +1597,347 @@ function updateCatalogueScale() {
 }
 
 /* ════════════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════════════ */
+function showToast(msg, type='success') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+/* ════════════════════════════════════════════════════
+   SAVE TEMPLATE
+════════════════════════════════════════════════════ */
+async function imgToB64(src, maxW, quality) {
+  if (!src || src === '') return null;
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const ratio = Math.min(1, maxW / (img.naturalWidth || maxW));
+      const w = Math.max(1, Math.round((img.naturalWidth || maxW) * ratio));
+      const h = Math.max(1, Math.round((img.naturalHeight || maxW) * ratio));
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+async function saveTemplate() {
+  const btn = document.getElementById('saveBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
+
+  try {
+    const data = { v: 3, gRows, gCols, heroEls: [], products: [], productImgs: {} };
+
+    // Hero Background
+    const heroBgWrap = document.getElementById('heroBgWrap');
+    const rawBg = heroBgWrap?.style.backgroundImage || '';
+    const bgSrc = rawBg.replace(/^url\(['"](.*)['"]\)$/, '$1').replace(/^url\((.*)\)$/, '$1');
+    if (bgSrc && bgSrc !== 'none' && bgSrc !== '') {
+      data.heroBgB64    = await imgToB64(bgSrc, 1200, 0.78);
+      data.heroBgSize   = heroBgWrap.style.backgroundSize;
+      data.heroBgPos    = heroBgWrap.style.backgroundPosition;
+      data.heroBgOpacity = parseFloat(heroBgWrap.style.opacity || '1');
+      data.heroOverlay  = document.getElementById('heroOverlay').style.display;
+    }
+
+    // Hero Elements
+    for (const el of document.querySelectorAll('#hero .hero-el')) {
+      let html = el.innerHTML.replace(/src="blob:[^"]*"/g, 'src=""');
+      // Convert imgbox shape image blobs to base64
+      const shapeImg = el.querySelector('img[id^="simg"]');
+      if (shapeImg && shapeImg.src && shapeImg.src.startsWith('blob:')) {
+        const b64 = await imgToB64(shapeImg.src, 600, 0.8);
+        if (b64) html = html.replace(/src=""/, `src="${b64}"`);
+      }
+      data.heroEls.push({
+        id: el.id, name: el.dataset.name, type: el.dataset.type,
+        left: el.style.left, top: el.style.top, right: el.style.right,
+        tAlign: el.style.textAlign, opacity: el.style.opacity, display: el.style.display,
+        html
+      });
+    }
+
+    // Product Card Texts
+    document.querySelectorAll('.product-card').forEach((card, i) => {
+      data.products[i] = {
+        name:    card.querySelector('.prod-name')?.textContent    || '',
+        mrp:     card.querySelector('.prod-mrp')?.textContent     || '',
+        packing: card.querySelector('.prod-packing')?.textContent || ''
+      };
+    });
+
+    // Product Images (compressed)
+    for (let i = 0; i < gRows * gCols; i++) {
+      const img = document.getElementById(`pimg${i}`);
+      if (img && img.src && img.src.startsWith('blob:')) {
+        const b64 = await imgToB64(img.src, 400, 0.78);
+        if (b64) data.productImgs[i] = b64;
+      }
+    }
+
+    const json = JSON.stringify(data);
+    localStorage.setItem('cc_save_v3', json);
+    const kb = (json.length / 1024).toFixed(0);
+    showToast(`✅ Saved! (${kb} KB used)`);
+  } catch(e) {
+    if (e.name === 'QuotaExceededError') {
+      showToast('⚠️ Storage full! Use fewer/smaller images.', 'error');
+    } else {
+      showToast('⚠️ Save failed: ' + e.message, 'error');
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Save'; }
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   LOAD TEMPLATE
+════════════════════════════════════════════════════ */
+function loadTemplate(silent) {
+  const raw = localStorage.getItem('cc_save_v3');
+  if (!raw) {
+    if (!silent) showToast('No saved template found.', 'error');
+    return false;
+  }
+  try {
+    const data = JSON.parse(raw);
+
+    // Restore Grid
+    if (data.gRows) gRows = data.gRows;
+    if (data.gCols) gCols = data.gCols;
+    buildGrid();
+
+    // Restore Product Texts
+    if (data.products && data.products.length) {
+      document.querySelectorAll('.product-card').forEach((card, i) => {
+        if (!data.products[i]) return;
+        const n  = card.querySelector('.prod-name');
+        const m  = card.querySelector('.prod-mrp');
+        const pk = card.querySelector('.prod-packing');
+        if (n)  n.textContent  = data.products[i].name;
+        if (m)  m.textContent  = data.products[i].mrp;
+        if (pk) pk.textContent = data.products[i].packing;
+      });
+    }
+
+    // Restore Product Images
+    if (data.productImgs) {
+      Object.entries(data.productImgs).forEach(([i, src]) => {
+        const img = document.getElementById('pimg' + i);
+        const ph  = document.getElementById('pph' + i);
+        if (img && src) {
+          img.src = src; img.style.display = 'block';
+          if (ph) ph.style.display = 'none';
+        }
+      });
+    }
+
+    // Restore Hero BG
+    if (data.heroBgB64) {
+      const wrap = document.getElementById('heroBgWrap');
+      wrap.style.backgroundImage    = "url('" + data.heroBgB64 + "')";
+      wrap.style.backgroundSize     = data.heroBgSize || 'cover';
+      wrap.style.backgroundPosition = data.heroBgPos  || 'center';
+      // Restore opacity
+      const op = data.heroBgOpacity !== undefined ? data.heroBgOpacity : 1;
+      wrap.style.opacity = op;
+      const slider = document.getElementById('heroBgOpacity');
+      const valLbl = document.getElementById('heroBgOpacityVal');
+      if (slider) { slider.value = Math.round(op * 100); setHeroBgOpacity(Math.round(op * 100)); }
+      if (valLbl) valLbl.textContent = Math.round(op * 100) + '%';
+      document.getElementById('heroPh').style.display      = 'none';
+      document.getElementById('heroOverlay').style.display = data.heroOverlay || 'block';
+    }
+
+    // Restore Hero Elements
+    const hero = document.getElementById('hero');
+    hero.querySelectorAll('.hero-el[id^="el-shape"]').forEach(e => e.remove());
+
+    data.heroEls.forEach(d => {
+      let el = document.getElementById(d.id);
+      const isNew = !el;
+      if (isNew) {
+        el = document.createElement('div');
+        el.className = 'hero-el';
+        el.id = d.id;
+        hero.appendChild(el);
+        const n = parseInt(d.id.replace('el-shape-', ''));
+        if (!isNaN(n) && n > shapeN) shapeN = n;
+      }
+      el.dataset.name = d.name || '';
+      el.dataset.type = d.type || '';
+      if (d.left)    el.style.left      = d.left;
+      if (d.top)     el.style.top       = d.top;
+      if (d.right)   el.style.right     = d.right;
+      if (d.tAlign)  el.style.textAlign = d.tAlign;
+      if (d.opacity) el.style.opacity   = d.opacity;
+      el.style.display = d.display || '';
+      el.innerHTML = d.html;
+      if (isNew && editMode) {
+        el.querySelectorAll('[contenteditable]').forEach(e => e.contentEditable = 'true');
+      }
+    });
+
+    updateLayers();
+    requestAnimationFrame(fitGrid);
+    if (!silent) showToast('📥 Template loaded!');
+    return true;
+  } catch(e) {
+    console.error('Load failed:', e);
+    if (!silent) showToast('⚠️ Load failed: ' + e.message, 'error');
+    return false;
+  }
+}
+
+function loadTemplatePrompt() {
+  if (!localStorage.getItem('cc_save_v3')) {
+    showToast('No saved template found.', 'error');
+    return;
+  }
+  if (confirm('Load saved template? Current unsaved edits will be lost.')) {
+    loadTemplate(false);
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   RESET TEMPLATE
+════════════════════════════════════════════════════ */
+function resetTemplate() {
+  if (!confirm('Reset everything to default?\n\nThis will:\n• Clear all your edits\n• Remove saved design from browser memory\n• Reload the page fresh\n\nThis cannot be undone!')) return;
+  localStorage.removeItem('cc_save_v3');
+  showToast('🔄 Resetting...');
+  setTimeout(() => location.reload(), 600);
+}
+
+/* ════════════════════════════════════════════════════
+   EXPORT DESIGN (download as JSON file)
+════════════════════════════════════════════════════ */
+async function exportDesign() {
+  const btn = document.querySelector('.tb-export');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Exporting...'; }
+  try {
+    // Reuse saveTemplate logic but return data instead of storing
+    const data = { v: 3, gRows, gCols, heroEls: [], products: [], productImgs: {}, exportedAt: new Date().toISOString() };
+
+    // Hero BG
+    const heroBgWrap = document.getElementById('heroBgWrap');
+    const rawBg = heroBgWrap?.style.backgroundImage || '';
+    const bgSrc = rawBg.replace(/^url\(['"](.*)['"]\)$/, '$1').replace(/^url\((.*)\)$/, '$1');
+    if (bgSrc && bgSrc !== 'none' && bgSrc !== '') {
+      data.heroBgB64   = await imgToB64(bgSrc, 1200, 0.78);
+      data.heroBgSize  = heroBgWrap.style.backgroundSize;
+      data.heroBgPos   = heroBgWrap.style.backgroundPosition;
+      data.heroOverlay = document.getElementById('heroOverlay').style.display;
+    }
+
+    // Hero Elements
+    for (const el of document.querySelectorAll('#hero .hero-el')) {
+      let html = el.innerHTML.replace(/src="blob:[^"]*"/g, 'src=""');
+      const shapeImg = el.querySelector('img[id^="simg"]');
+      if (shapeImg && shapeImg.src && shapeImg.src.startsWith('blob:')) {
+        const b64 = await imgToB64(shapeImg.src, 600, 0.8);
+        if (b64) html = html.replace(/src=""/, `src="${b64}"`);
+      }
+      data.heroEls.push({
+        id: el.id, name: el.dataset.name, type: el.dataset.type,
+        left: el.style.left, top: el.style.top, right: el.style.right,
+        tAlign: el.style.textAlign, opacity: el.style.opacity, display: el.style.display,
+        html
+      });
+    }
+
+    // Products
+    document.querySelectorAll('.product-card').forEach((card, i) => {
+      data.products[i] = {
+        name:    card.querySelector('.prod-name')?.textContent    || '',
+        mrp:     card.querySelector('.prod-mrp')?.textContent     || '',
+        packing: card.querySelector('.prod-packing')?.textContent || ''
+      };
+    });
+
+    // Product Images
+    for (let i = 0; i < gRows * gCols; i++) {
+      const img = document.getElementById(`pimg${i}`);
+      if (img && img.src && img.src.startsWith('blob:')) {
+        const b64 = await imgToB64(img.src, 400, 0.78);
+        if (b64) data.productImgs[i] = b64;
+      }
+    }
+
+    // Download as file
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const date = new Date().toISOString().slice(0,10);
+    a.href     = url;
+    a.download = `catalogue-design-${date}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    const kb = (json.length / 1024).toFixed(0);
+    showToast(`✅ Design exported! (${kb} KB)`);
+  } catch(e) {
+    showToast('⚠️ Export failed: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⬇️ Export'; }
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   IMPORT DESIGN (load from JSON file)
+════════════════════════════════════════════════════ */
+function importDesign() {
+  const inp = document.createElement('input');
+  inp.type   = 'file';
+  inp.accept = '.json,application/json';
+  inp.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!confirm(`Import "${file.name}"?\n\nThis will replace your current design.`)) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data.v || !data.heroEls) {
+          showToast('⚠️ Invalid design file!', 'error');
+          return;
+        }
+        // Temporarily store in localStorage and load
+        localStorage.setItem('cc_save_v3', JSON.stringify(data));
+        loadTemplate(true);
+        showToast('📥 Design imported from file!');
+      } catch(err) {
+        showToast('⚠️ Import failed: ' + err.message, 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+
+/* ════════════════════════════════════════════════════
    INIT
 ════════════════════════════════════════════════════ */
 updateCatalogueScale();
 buildGrid();
 initDrag();
 requestAnimationFrame(fitGrid);
+// Auto-restore last saved template on startup
+requestAnimationFrame(() => {
+  if (localStorage.getItem('cc_save_v3')) {
+    loadTemplate(true);
+    showToast('📥 Previous design restored!');
+  }
+});
 window.addEventListener('resize', () => {
   updateCatalogueScale();
   fitGrid();
