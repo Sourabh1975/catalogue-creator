@@ -373,8 +373,14 @@ body.edit-mode .hero-el.rotating {
   cursor:pointer; border-radius:6px;
   position:relative; overflow:hidden;
 }
-.prod-img-box img { max-width:100%; max-height:100%; object-fit:contain; display:none; }
+.prod-img-box img {
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  object-fit:contain; object-position:center center;
+  display:none;
+}
 .prod-img-ph {
+  position:absolute; inset:0;
   width:100%; height:100%;
   background:linear-gradient(145deg,#f0f4f9,#e8f0fe);
   border:1.5px dashed #b0c4de; border-radius:6px;
@@ -673,6 +679,8 @@ textarea.saba-input { resize:vertical; min-height:52px; }
 .rp-body { flex:1; overflow-y:auto; padding:10px; scrollbar-width:thin; scrollbar-color:rgba(96,165,250,.3) transparent; }
 
 #saba-bottom-bar { height:38px; flex-shrink:0; background:#0f1729; border-top:1.5px solid rgba(255,255,255,.06); display:flex; align-items:center; padding:0 12px; gap:8px; }
+#print-pages { display:none; }
+.print-page { width:794px; height:1123px; background:white; overflow:hidden; }
 .page-add-btn { background:rgba(59,130,246,.18); color:#60a5fa; border:1px solid rgba(59,130,246,.3); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap; transition:all .15s; }
 .page-add-btn:hover { background:rgba(59,130,246,.3); }
 #page-tabs { display:flex; gap:5px; flex:1; overflow-x:auto; scrollbar-width:none; }
@@ -890,7 +898,47 @@ textarea.saba-input { resize:vertical; min-height:52px; }
   body { background:white; }
   #saba-top-toolbar, #saba-left-sidebar, #saba-right-panel, #saba-bottom-bar,
   #template-picker, #template-browser, #add-product-modal,
+  #toast-container,
   .el-del, .el-handle, .el-rotate, .el-resize, #heroChangBtn { display:none !important; }
+  body.printing-pdf #saba-workspace { display:none !important; }
+  body.printing-pdf #print-pages { display:block !important; }
+  body.printing-pdf .print-page {
+    display:flex !important;
+    flex-direction:column;
+    width:794px !important;
+    height:1123px !important;
+    max-width:none !important;
+    min-height:0 !important;
+    margin:0 !important;
+    box-shadow:none !important;
+    border-radius:0 !important;
+    transform:none !important;
+    page-break-after:always;
+    break-after:page;
+    print-color-adjust:exact;
+    -webkit-print-color-adjust:exact;
+  }
+  body.printing-pdf .print-page:last-child { page-break-after:auto; break-after:auto; }
+  body.printing-pdf .print-page .hero-el { outline:none !important; }
+  body.printing-pdf .prod-img-ph {
+    background:#f8fafc !important;
+    border:1px solid #edf2f7 !important;
+    color:transparent !important;
+    box-shadow:none !important;
+  }
+  body.printing-pdf .prod-img-ph .ps,
+  body.printing-pdf .prod-img-ph br {
+    display:none !important;
+  }
+  body.printing-pdf .product-card.is-print-empty {
+    border-color:#f1f5f9 !important;
+    background:#fff !important;
+  }
+  body.printing-pdf .product-card.is-print-empty .prod-name,
+  body.printing-pdf .product-card.is-print-empty .prod-mrp,
+  body.printing-pdf .product-card.is-print-empty .prod-packing {
+    color:transparent !important;
+  }
   #saba-workspace { display:block; }
   #saba-center-canvas { padding:0; background:white; }
   #canvas-zoom-wrapper { transform:none !important; }

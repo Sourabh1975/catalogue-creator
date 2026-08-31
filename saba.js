@@ -8,6 +8,8 @@ let directEditMode='', directEditStart={};
 const DEFAULT_PAGE_COLORS = { page:'#ffffff', hero:'', products:'#ffffff' };
 let currentPageColors = { ...DEFAULT_PAGE_COLORS };
 let autosaveTimer = null;
+const pages = [];
+let currentPageIndex = 0;
 
 function layoutTokens(layout=currentLayoutType) {
   return String(layout || 'grid').split(/\s+/).filter(Boolean);
@@ -66,35 +68,18 @@ function loadPageColors() {
 }
 
 function getCurrentDesignData() {
-  const data = { v: 3, gRows, gCols, layoutType: currentLayoutType, pageColors: currentPageColors, heroEls: [], products: [], productImgs: {}, cardStyles: JSON.parse(JSON.stringify(cardStyles || {})) };
-  const heroBgWrap = document.getElementById('heroBgWrap');
-  const hero = document.getElementById('hero');
-  const sec = document.querySelector('.products-section');
-  data.heroBg = heroBgWrap?.style.backgroundImage || '';
-  data.heroBgSize = heroBgWrap?.style.backgroundSize || '';
-  data.heroBgPos = heroBgWrap?.style.backgroundPosition || '';
-  data.heroBgOpacity = parseFloat(heroBgWrap?.style.opacity || '1');
-  data.heroOverlay = document.getElementById('heroOverlay')?.style.display || 'none';
-  data.heroHeight = hero?.style.height || '';
-  data.secDisplay = sec?.style.display || '';
-  data.secHeight = sec?.style.height || '';
-  document.querySelectorAll('#hero .hero-el').forEach(el => {
-    data.heroEls.push({
-      id: el.id, name: el.dataset.name, type: el.dataset.type,
-      left: el.style.left, top: el.style.top, right: el.style.right,
-      tAlign: el.style.textAlign, opacity: el.style.opacity,
-      display: el.style.display, transform: getElementTransformCSS(el), html: el.innerHTML
-    });
-  });
-  document.querySelectorAll('.product-card').forEach((card, i) => {
-    data.products[i] = {
-      name:    card.querySelector('.prod-name')?.textContent    || '',
-      mrp:     card.querySelector('.prod-mrp')?.textContent     || '',
-      packing: card.querySelector('.prod-packing')?.textContent || '',
-      img:     card.querySelector('img')?.src || ''
-    };
-  });
-  return data;
+  if (typeof capturePageState === 'function') {
+    while (pages.length <= currentPageIndex) pages.push({});
+    pages[currentPageIndex] = capturePageState();
+  }
+  return {
+    v: 4,
+    isMultiPage: true,
+    pages: pages,
+    currentPageIndex: currentPageIndex,
+    brandKit: typeof brandKit !== 'undefined' ? brandKit : {},
+    productDB: typeof productDB !== 'undefined' ? productDB : []
+  };
 }
 
 function saveDraftNow() {
@@ -187,18 +172,29 @@ function buildGrid(productsOverride) {
 
   document.getElementById('rVal').textContent = gRows;
   document.getElementById('cVal').textContent = gCols;
+  syncProductImagePlaceholders(grid);
   requestAnimationFrame(fitGrid); // recalculate row heights
 }
 
 function productImageHTML(i, img, label='Image') {
   return `
     <div class="prod-img-box" onclick="pickProdImg(${i})">
-      <img id="pimg${i}" src="${img || ''}" alt="" style="display:${img?'block':'none'}">
-      <div class="prod-img-ph" id="pph${i}" style="display:${img?'none':''}">
+      <img class="prod-img" id="pimg${i}" src="${img || ''}" alt="" style="display:${img?'block':'none'}">
+      <div class="prod-img-ph" id="pph${i}" style="display:${img?'none':'flex'}">
         <span class="ps">+</span><span>${label}</span>
       </div>
     </div>
   `;
+}
+
+function syncProductImagePlaceholders(root=document) {
+  root.querySelectorAll('.prod-img-box').forEach(box => {
+    const img = box.querySelector('img');
+    const ph = box.querySelector('.prod-img-ph');
+    const hasImg = !!(img && img.getAttribute('src') && img.getAttribute('src') !== 'none');
+    if (img) img.style.display = hasImg ? 'block' : 'none';
+    if (ph) ph.style.display = hasImg ? 'none' : 'flex';
+  });
 }
 
 function productCardHTML(i, p, layout='grid') {
@@ -1066,10 +1062,14 @@ function pickShapeImg(imgId, container) {
   inp.onchange = e => {
     const f = e.target.files[0]; if (!f) return;
     const img = document.getElementById(imgId);
-    const ph  = container.querySelector('span');
-    img.src = URL.createObjectURL(f);
-    img.style.display = 'block';
-    if (ph) ph.style.display = 'none';
+    const ph = container.querySelector('span');
+    const blobUrl = URL.createObjectURL(f);
+    imgToB64(blobUrl, 600, 0.75).then(b64 => {
+      img.src = b64;
+      img.style.display = 'block';
+      if (ph) ph.style.display = 'none';
+      URL.revokeObjectURL(blobUrl);
+    });
   };
   inp.click();
 }
@@ -1148,7 +1148,11 @@ function pickHeroImg() {
   inp.onchange = e => {
     const f = e.target.files[0]; if (!f) return;
     const wrap = document.getElementById('heroBgWrap');
-    wrap.style.backgroundImage = `url('${URL.createObjectURL(f)}')`;
+    const blobUrl = URL.createObjectURL(f);
+    imgToB64(blobUrl, 1200, 0.75).then(b64 => {
+      wrap.style.backgroundImage = `url('${b64}')`;
+      URL.revokeObjectURL(blobUrl);
+    });
     wrap.style.backgroundSize = 'cover'; wrap.style.backgroundPosition = 'center';
     document.getElementById('heroPh').style.display = 'none';
     document.getElementById('heroOverlay').style.display = 'block';
@@ -1189,10 +1193,16 @@ function pickProdImg(i) {
   inp.onchange = e => {
     const f = e.target.files[0]; if (!f) return;
     const img = document.getElementById(`pimg${i}`);
-    const ph  = document.getElementById(`pph${i}`);
-    img.src = URL.createObjectURL(f);
-    img.style.display = 'block';
-    if (ph) ph.style.display = 'none';
+    const ph = document.getElementById(`pph${i}`);
+    const blobUrl = URL.createObjectURL(f);
+    imgToB64(blobUrl, 400, 0.75).then(b64 => {
+      img.src = b64;
+      img.style.display = 'block';
+      if (ph) ph.style.display = 'none';
+      URL.revokeObjectURL(blobUrl);
+      syncProductImagePlaceholders(document.getElementById('productsGrid'));
+      scheduleAutosave();
+    });
   };
   inp.click();
 }
@@ -1200,10 +1210,65 @@ function pickProdImg(i) {
 /* ════════════════════════════════════════════════════
    DOWNLOAD
 ════════════════════════════════════════════════════ */
-function downloadPDF() {
+function waitForPaint() {
+  return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+}
+
+async function buildPrintPages() {
+  pages[currentPageIndex] = capturePageState();
+  saveDraftNow();
+
+  const originalIndex = currentPageIndex;
+  const old = document.getElementById('print-pages');
+  if (old) old.remove();
+
+  const printRoot = document.createElement('div');
+  printRoot.id = 'print-pages';
+  document.body.appendChild(printRoot);
+
+  for (let i = 0; i < pages.length; i++) {
+    currentPageIndex = i;
+    restorePageState(pages[i]);
+    await waitForPaint();
+    const cat = document.getElementById('catalogue');
+    if (!cat) continue;
+    const clone = cat.cloneNode(true);
+    clone.classList.add('print-page');
+    clone.querySelectorAll('[contenteditable]').forEach(el => el.contentEditable = 'false');
+    clone.querySelectorAll('.active-el').forEach(el => el.classList.remove('active-el'));
+    clone.querySelectorAll('.product-card').forEach(card => {
+      const name = (card.querySelector('.prod-name')?.textContent || '').trim();
+      const mrp = (card.querySelector('.prod-mrp')?.textContent || '').trim();
+      const packing = (card.querySelector('.prod-packing')?.textContent || '').trim();
+      const img = card.querySelector('.prod-img, img[id^="pimg"], img');
+      const hasRealImg = img && img.src && img.style.display !== 'none';
+      const isDefaultText = /^Product\s+\d+$/i.test(name) && /MRP\s+Rs\.\s*000\/-/i.test(mrp) && !packing;
+      if (isDefaultText && !hasRealImg) card.classList.add('is-print-empty');
+    });
+    syncProductImagePlaceholders(clone);
+    printRoot.appendChild(clone);
+  }
+
+  currentPageIndex = originalIndex;
+  restorePageState(pages[originalIndex]);
+  renderPageTabs();
+  await waitForPaint();
+  return printRoot;
+}
+
+async function downloadPDF() {
+  const wasEditing = editMode;
   if (editMode) toggleEdit();
-  alert('🖨️ Print Tips:\n\n✅ Destination → Save as PDF\n✅ "Background graphics" checkbox → MUST BE CHECKED\n   (otherwise hero image won\'t print)\n\nClick OK then Save!');
-  setTimeout(()=>window.print(), 300);
+  try {
+    await buildPrintPages();
+    document.body.classList.add('printing-pdf');
+    document.getElementById('toast-container')?.replaceChildren();
+    setTimeout(() => window.print(), 120);
+  } catch(e) {
+    showToast('PDF prepare failed: ' + e.message, 'error');
+  } finally {
+    if (wasEditing && !editMode) setTimeout(() => toggleEdit(), 500);
+  }
 }
 
 /* ════════════════════════════════════════════════════
@@ -1321,62 +1386,8 @@ async function imgToB64(src, maxW, quality) {
 async function saveTemplate() {
   const btn = document.getElementById('saveBtn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
-
   try {
-    const data = { v: 3, gRows, gCols, layoutType: currentLayoutType, pageColors: currentPageColors, heroEls: [], products: [], productImgs: {} };
-
-    // Hero Background
-    const heroBgWrap = document.getElementById('heroBgWrap');
-    const rawBg = heroBgWrap?.style.backgroundImage || '';
-    const bgSrc = rawBg.replace(/^url\(['"](.*)['"]\)$/, '$1').replace(/^url\((.*)\)$/, '$1');
-    if (bgSrc && bgSrc !== 'none' && bgSrc !== '') {
-      data.heroBgB64    = await imgToB64(bgSrc, 1200, 0.78);
-      data.heroBgSize   = heroBgWrap.style.backgroundSize;
-      data.heroBgPos    = heroBgWrap.style.backgroundPosition;
-      data.heroBgOpacity = parseFloat(heroBgWrap.style.opacity || '1');
-      data.heroOverlay  = document.getElementById('heroOverlay').style.display;
-    }
-
-    // Hero Elements
-    for (const el of document.querySelectorAll('#hero .hero-el')) {
-      let html = el.innerHTML.replace(/src="blob:[^"]*"/g, 'src=""');
-      // Convert imgbox shape image blobs to base64
-      const shapeImg = el.querySelector('img[id^="simg"]');
-      if (shapeImg && shapeImg.src && shapeImg.src.startsWith('blob:')) {
-        const b64 = await imgToB64(shapeImg.src, 600, 0.8);
-        if (b64) html = html.replace(/src=""/, `src="${b64}"`);
-      }
-      data.heroEls.push({
-        id: el.id, name: el.dataset.name, type: el.dataset.type,
-        left: el.style.left, top: el.style.top, right: el.style.right,
-        tAlign: el.style.textAlign, opacity: el.style.opacity, display: el.style.display,
-        transform: getElementTransformCSS(el),
-        html
-      });
-    }
-
-    // Product Card Texts
-    document.querySelectorAll('.product-card').forEach((card, i) => {
-      data.products[i] = {
-        name:    card.querySelector('.prod-name')?.textContent    || '',
-        mrp:     card.querySelector('.prod-mrp')?.textContent     || '',
-        packing: card.querySelector('.prod-packing')?.textContent || '',
-        img:     card.querySelector('img')?.src || ''
-      };
-    });
-
-    // Product Images (compressed)
-    for (let i = 0; i < gRows * gCols; i++) {
-      const img = document.getElementById(`pimg${i}`);
-      if (img && img.src && img.src.startsWith('blob:')) {
-        const b64 = await imgToB64(img.src, 400, 0.78);
-        if (b64) data.productImgs[i] = b64;
-      }
-    }
-
-    // Card Styles
-    data.cardStyles = JSON.parse(JSON.stringify(cardStyles));
-
+    const data = getCurrentDesignData();
     const json = JSON.stringify(data);
     localStorage.setItem('cc_save_v3', json);
     const kb = (json.length / 1024).toFixed(0);
@@ -1403,102 +1414,30 @@ function loadTemplate(silent) {
   }
   try {
     const data = JSON.parse(raw);
-
-    // Restore Grid
-    if (Number.isFinite(Number(data.gRows))) gRows = Number(data.gRows);
-    if (Number.isFinite(Number(data.gCols))) gCols = Number(data.gCols);
-    currentLayoutType = data.layoutType || 'grid';
-    applyPageColors(data.pageColors || currentPageColors);
-    buildGrid(data.products);
-
-    const heroEl = document.getElementById('hero');
-    const sec = document.querySelector('.products-section');
-    const isCover = layoutHas('cover', currentLayoutType) || gRows <= 0 || gCols <= 0;
-    if (heroEl && data.heroHeight) heroEl.style.height = String(data.heroHeight).endsWith('px') ? data.heroHeight : data.heroHeight + 'px';
-    if (sec) {
-      if (data.secDisplay !== undefined) sec.style.display = data.secDisplay;
-      if (data.secHeight) sec.style.height = data.secHeight;
-      if (isCover) sec.style.display = 'none';
-    }
-
-    // Restore Product Texts
-    if (data.products && data.products.length) {
-      document.querySelectorAll('.product-card').forEach((card, i) => {
-        if (!data.products[i]) return;
-        const n  = card.querySelector('.prod-name');
-        const m  = card.querySelector('.prod-mrp');
-        const pk = card.querySelector('.prod-packing');
-        if (n)  n.textContent  = data.products[i].name;
-        if (m)  m.textContent  = data.products[i].mrp;
-        if (pk) pk.textContent = data.products[i].packing;
-      });
-    }
-
-    // Restore Product Images
-    if (data.productImgs) {
-      Object.entries(data.productImgs).forEach(([i, src]) => {
-        const img = document.getElementById('pimg' + i);
-        const ph  = document.getElementById('pph' + i);
-        if (img && src) {
-          img.src = src; img.style.display = 'block';
-          if (ph) ph.style.display = 'none';
-        }
-      });
-    }
-
-    // Restore Hero BG
-    if (data.heroBgB64 || data.heroBg) {
-      const wrap = document.getElementById('heroBgWrap');
-      wrap.style.backgroundImage    = data.heroBgB64 ? "url('" + data.heroBgB64 + "')" : data.heroBg;
-      wrap.style.backgroundSize     = data.heroBgSize || 'cover';
-      wrap.style.backgroundPosition = data.heroBgPos  || 'center';
-      // Restore opacity
-      const op = data.heroBgOpacity !== undefined ? data.heroBgOpacity : 1;
-      wrap.style.opacity = op;
-      const slider = document.getElementById('heroBgOpacity');
-      const valLbl = document.getElementById('heroBgOpacityVal');
-      if (slider) { slider.value = Math.round(op * 100); setHeroBgOpacity(Math.round(op * 100)); }
-      if (valLbl) valLbl.textContent = Math.round(op * 100) + '%';
-      document.getElementById('heroPh').style.display      = 'none';
-      document.getElementById('heroOverlay').style.display = data.heroOverlay || 'block';
-    }
-
-    // Restore Hero Elements
-    const hero = document.getElementById('hero');
-    hero.querySelectorAll('.hero-el[id^="el-shape"]').forEach(e => e.remove());
-
-    data.heroEls.forEach(d => {
-      let el = document.getElementById(d.id);
-      const isNew = !el;
-      if (isNew) {
-        el = document.createElement('div');
-        el.className = 'hero-el';
-        el.id = d.id;
-        hero.appendChild(el);
-        const n = parseInt(d.id.replace('el-shape-', ''));
-        if (!isNaN(n) && n > shapeN) shapeN = n;
+    
+    if (data.isMultiPage && Array.isArray(data.pages)) {
+      pages.length = 0;
+      data.pages.forEach(page => pages.push(page));
+      currentPageIndex = data.currentPageIndex || 0;
+      if (typeof brandKit !== 'undefined' && data.brandKit) Object.assign(brandKit, data.brandKit);
+      if (typeof productDB !== 'undefined' && data.productDB) productDB = data.productDB;
+    } else {
+      if (data.productImgs) {
+        Object.keys(data.productImgs).forEach(i => {
+          if (data.products && data.products[i]) data.products[i].img = data.productImgs[i];
+        });
       }
-      el.dataset.name = d.name || '';
-      el.dataset.type = d.type || '';
-      if (d.left)    el.style.left      = d.left;
-      if (d.top)     el.style.top       = d.top;
-      if (d.right)   el.style.right     = d.right;
-      if (d.tAlign)  el.style.textAlign = d.tAlign;
-      if (d.opacity) el.style.opacity   = d.opacity;
-      if (d.transform) el.style.transform = d.transform;
-      el.style.display = d.display || '';
-      el.innerHTML = restoredElementHTML(d);
-      ensureElementControls(el);
-      if (isNew && editMode) {
-        el.querySelectorAll('[contenteditable]').forEach(e => e.contentEditable = 'true');
-      }
-    });
-
-    updateLayers();
-    requestAnimationFrame(fitGrid);
-    // Restore card styles
-    if (data.cardStyles) applyCardStyles(data.cardStyles);
-    if (!silent) showToast('📥 Template loaded!');
+      pages.length = 0;
+      pages.push(data);
+      currentPageIndex = 0;
+    }
+    
+    if (pages.length === 0) return false;
+    currentPageIndex = Math.max(0, Math.min(currentPageIndex, pages.length - 1));
+    
+    restorePageState(pages[currentPageIndex]);
+    renderPageTabs();
+    if (!silent) showToast('✅ Design loaded!');
     return true;
   } catch(e) {
     console.error('Load failed:', e);
@@ -2612,10 +2551,13 @@ function pickBrandLogo() {
   inp.type = 'file'; inp.accept = 'image/*';
   inp.onchange = e => {
     const f = e.target.files[0]; if (!f) return;
-    const url = URL.createObjectURL(f);
     const preview = document.getElementById('brand-logo-preview');
-    if (preview) preview.innerHTML = `<img src="${url}" style="max-width:100%;max-height:70px;border-radius:6px;border:1px solid rgba(255,255,255,.1);">`;
-    brandKit.logoUrl = url;
+    const blobUrl = URL.createObjectURL(f);
+    imgToB64(blobUrl, 300, 0.8).then(b64 => {
+      if (preview) preview.innerHTML = `<img src="${b64}" style="max-width:100%;max-height:70px;border-radius:6px;border:1px solid rgba(255,255,255,.1);">`;
+      brandKit.logoUrl = b64;
+      URL.revokeObjectURL(blobUrl);
+    });
     showToast('✅ Logo uploaded!');
   };
   inp.click();
@@ -2834,12 +2776,14 @@ document.addEventListener('input', e => {
   if (e.target.closest?.('#hero, #productsGrid')) scheduleAutosave();
 });
 
+window.addEventListener('afterprint', () => {
+  document.body.classList.remove('printing-pdf');
+  document.getElementById('print-pages')?.remove();
+});
+
 /* ════════════════════════════════════════════════════
    MULTI-PAGE SYSTEM — Real implementation
 ════════════════════════════════════════════════════ */
-
-const pages = []; // Array of page state snapshots
-let currentPageIndex = 0;
 
 // Save current canvas state as a page snapshot
 function capturePageState() {
@@ -2942,7 +2886,19 @@ function restorePageState(state) {
     const n  = card.querySelector('.prod-name');    if (n)  n.textContent  = p.name;
     const m  = card.querySelector('.prod-mrp');     if (m)  m.textContent  = p.mrp;
     const pk = card.querySelector('.prod-packing'); if (pk) pk.textContent = p.packing;
+    
+    const img = card.querySelector('.prod-img, img[id^="pimg"], img');
+    const ph = card.querySelector('.prod-img-ph');
+    if (img && p.img && p.img !== '' && !p.img.includes('placeholder')) {
+      img.src = p.img;
+      img.style.display = 'block';
+      if (ph) ph.style.display = 'none';
+    } else {
+      if (img) { img.src = ''; img.style.display = 'none'; }
+      if (ph) ph.style.display = 'flex';
+    }
   });
+  syncProductImagePlaceholders(document.getElementById('productsGrid'));
   // Card styles
   if (state.cardStyles) applyCardStyles(state.cardStyles);
   updateLayers();
@@ -3029,8 +2985,8 @@ function renderPageTabs() {
   if (countLbl) countLbl.textContent = `Page ${currentPageIndex + 1} of ${pages.length}`;
 }
 
-// Initialize pages array with page 1
-pages.push(capturePageState());
+// Initialize pages array with page 1 only when no saved design/template loaded.
+if (pages.length === 0) pages.push(capturePageState());
 renderPageTabs();
 
 /* ════════════════════════════════════════════════════
