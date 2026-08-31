@@ -6,7 +6,10 @@
 <title>SABA — Searchable Asset & Brand Authoring</title>
 <meta name="description" content="SABA: Professional catalogue builder for any company or brand. Design product catalogues, price lists and brochures without AI.">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="saba.css">
+<script>
+  window.SABA_ASSET_VERSION = new URLSearchParams(location.search).get('fresh') || '2026-09-01-01';
+  document.write('<link rel="stylesheet" href="saba.css?v=' + encodeURIComponent(window.SABA_ASSET_VERSION) + '">');
+</script>
 </head>
 <body class="saba-layout">
 
@@ -46,6 +49,7 @@
     <button class="tb-btn tb-export" onclick="exportDesign()" title="Export JSON">⬇ Export</button>
     <button class="tb-btn tb-import" onclick="importDesign()" title="Import JSON">⬆ Import</button>
     <button class="tb-btn tb-dl" onclick="downloadPDF()" title="Download PDF">📄 PDF</button>
+    <button class="tb-btn tb-refresh" onclick="hardRefreshApp()" title="Clear app cache and reload latest files">🧹 Hard Refresh</button>
     <button class="tb-btn tb-reset" onclick="resetTemplate()" title="Reset all">🔄 Reset</button>
   </div>
 </div>
@@ -561,7 +565,9 @@
 
 <div id="toast-container"></div>
 
-<script src="saba-templates.js"></script>
-<script src="saba.js"></script>
+<script>
+  document.write('<script src="saba-templates.js?v=' + encodeURIComponent(window.SABA_ASSET_VERSION) + '"><\/script>');
+  document.write('<script src="saba.js?v=' + encodeURIComponent(window.SABA_ASSET_VERSION) + '"><\/script>');
+</script>
 </body>
 </html>

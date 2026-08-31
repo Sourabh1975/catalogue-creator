@@ -1466,6 +1466,28 @@ function resetTemplate() {
   setTimeout(() => location.reload(), 600);
 }
 
+async function hardRefreshApp() {
+  if (!confirm('Hard refresh app cache?\n\nYour saved design/pages will stay. Only old cached files and temporary browser cache will be cleared.')) return;
+  try {
+    saveDraftNow();
+    if ('caches' in window) {
+      const names = await caches.keys();
+      await Promise.all(names.map(name => caches.delete(name)));
+    }
+    if (navigator.serviceWorker?.getRegistrations) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(reg => reg.unregister()));
+    }
+    sessionStorage.clear();
+  } catch(e) {
+    console.warn('Hard refresh cleanup failed:', e);
+  } finally {
+    const url = new URL(location.href);
+    url.searchParams.set('fresh', Date.now().toString());
+    location.replace(url.toString());
+  }
+}
+
 /* ════════════════════════════════════════════════════
    EXPORT DESIGN (download as JSON file)
 ════════════════════════════════════════════════════ */
