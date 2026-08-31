@@ -3,2124 +3,565 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Catalogue Creator</title>
+<title>SABA — Searchable Asset & Brand Authoring</title>
+<meta name="description" content="SABA: Professional catalogue builder for any company or brand. Design product catalogues, price lists and brochures without AI.">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-/* ═══════════════════════════════════════════ RESET */
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-
-html { overflow-x:hidden; }
-body { font-family:'Inter',sans-serif; background:#111827; min-height:100vh; overflow-x:hidden; }
-
-/* ═══════════════════════════════════════════ TOOLBAR */
-#toolbar {
-  height: 52px;
-  background: linear-gradient(135deg,#0a1628,#0d2241);
-  display: flex; align-items: center; padding: 0 18px; gap: 10px;
-  position: sticky; top:0; z-index:9999;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.45);
-  border-bottom: 1.5px solid rgba(99,179,237,0.12);
-}
-.tb-brand { display:flex; align-items:center; gap:10px; margin-right:10px; }
-.tb-brand-icon {
-  width:32px; height:32px;
-  background:linear-gradient(135deg,#3b82f6,#1d4ed8);
-  border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px;
-}
-.tb-brand-text h2 { font-size:13px; font-weight:700; color:white; font-family:'Montserrat',sans-serif; }
-.tb-brand-text p  { font-size:9px; color:rgba(255,255,255,0.4); }
-.tb-divider { width:1px; height:26px; background:rgba(255,255,255,0.1); margin:0 4px; }
-.tb-btn {
-  padding:6px 14px; border:none; border-radius:6px;
-  font-family:'Inter',sans-serif; font-size:11px; font-weight:600;
-  cursor:pointer; transition:all .18s; display:flex; align-items:center; gap:5px; white-space:nowrap;
-}
-.tb-edit { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.75); border:1px solid rgba(255,255,255,0.14); }
-.tb-edit:hover { background:rgba(255,255,255,0.14); }
-.tb-edit.active {
-  background:linear-gradient(135deg,#166534,#15803d); color:#bbf7d0;
-  border-color:#4ade80; box-shadow:0 0 12px rgba(74,222,128,0.3);
-}
-.tb-dl {
-  background:linear-gradient(135deg,#ea580c,#c2410c); color:white;
-  box-shadow:0 2px 10px rgba(234,88,12,0.35); margin-left:auto;
-}
-.tb-dl:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(234,88,12,0.5); }
-#tb-hint { font-size:10px; color:rgba(255,255,255,0.35); font-style:italic; }
-
-/* ═══════════════════════════════════════════ MAIN LAYOUT */
-#main-layout {
-  display:flex; justify-content:center; padding:22px 16px 40px; gap:18px; align-items:flex-start;
-}
-
-#catalogue-stage {
-  width:794px;
-  height:1123px;
-  flex-shrink:0;
-  max-width:100%;
-}
-
-/* ═══════════════════════════════════════════ EDITOR SIDEBAR */
-#editor-panel {
-  width:210px; flex-shrink:0; display:none; flex-direction:column; gap:12px;
-  position:sticky; top:70px; max-height:calc(100vh - 80px); overflow-y:auto;
-}
-body.edit-mode #editor-panel { display:flex; }
-/* Sidebar scrollbar styling */
-#editor-panel {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(99,179,237,.35) transparent;
-}
-#editor-panel::-webkit-scrollbar { width: 5px; }
-#editor-panel::-webkit-scrollbar-track { background: rgba(255,255,255,.04); border-radius:3px; }
-#editor-panel::-webkit-scrollbar-thumb { background: rgba(99,179,237,.35); border-radius:3px; }
-#editor-panel::-webkit-scrollbar-thumb:hover { background: rgba(99,179,237,.6); }
-
-.ep-card {
-  background:#1f2937; border:1px solid rgba(255,255,255,0.07);
-  border-radius:10px; overflow:hidden;
-  flex-shrink:0; /* Never compress — sidebar scrolls instead */
-}
-.ep-title {
-  background:rgba(255,255,255,0.04); padding:7px 11px;
-  font-size:9px; font-weight:700; color:rgba(255,255,255,0.5);
-  letter-spacing:1.2px; text-transform:uppercase;
-  border-bottom:1px solid rgba(255,255,255,0.05);
-}
-.ep-body { padding:11px; }
-
-/* Grid control */
-.grid-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; }
-.grid-row:last-child { margin-bottom:0; }
-.grid-lbl { font-size:11px; color:rgba(255,255,255,0.65); font-weight:500; }
-.grid-ctrl { display:flex; align-items:center; gap:7px; }
-.g-btn {
-  width:24px; height:24px; background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.12); border-radius:5px;
-  color:white; font-size:15px; font-weight:700; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; line-height:1;
-  transition:background .15s;
-}
-.g-btn:hover { background:rgba(255,255,255,0.18); }
-.g-val { font-size:15px; font-weight:700; color:white; min-width:22px; text-align:center; }
-
-/* Shapes grid */
-.shapes-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
-.shape-btn {
-  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);
-  border-radius:8px; padding:8px 3px; cursor:pointer;
-  display:flex; flex-direction:column; align-items:center; gap:4px; transition:all .18s;
-}
-.shape-btn:hover { background:rgba(59,130,246,0.22); border-color:#3b82f6; }
-.s-ico { font-size:18px; line-height:1; }
-.s-lbl { font-size:9px; color:rgba(255,255,255,0.55); font-weight:600; }
-
-/* Layers list */
-#layersList { display:flex; flex-direction:column; gap:4px; max-height:130px; overflow-y:auto; }
-.layer-item {
-  display:flex; align-items:center; gap:6px; padding:5px 7px;
-  border-radius:6px; cursor:pointer; transition:background .15s;
-  border:1px solid transparent;
-}
-.layer-item:hover { background:rgba(255,255,255,0.05); }
-.layer-item.selected { background:rgba(59,130,246,0.18); border-color:rgba(59,130,246,0.35); }
-.layer-vis {
-  width:18px; height:18px; cursor:pointer; font-size:12px;
-  display:flex; align-items:center; justify-content:center;
-  border-radius:3px; flex-shrink:0;
-}
-.layer-vis:hover { background:rgba(255,255,255,0.1); }
-.layer-name {
-  font-size:10px; color:rgba(255,255,255,0.65); font-weight:500;
-  flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-.layer-del {
-  width:18px; height:18px; background:none; border:none;
-  color:rgba(248,113,113,0.55); cursor:pointer; font-size:15px;
-  display:flex; align-items:center; justify-content:center;
-  border-radius:3px; transition:all .15s; line-height:1;
-}
-.layer-del:hover { color:#f87171; background:rgba(248,113,113,0.15); }
-
-/* ═══════════════════════════════════════════ CATALOGUE - A4 */
-#catalogue {
-  width:794px; flex-shrink:0;
-  height:1123px; /* A4 exact height */
-  background:white;
-  box-shadow:0 20px 80px rgba(0,0,0,0.5);
-  overflow:hidden; border-radius:3px;
-  display:flex; flex-direction:column;
-  transform-origin:top left;
-}
-
-/* ═══════════════════════════════════════════ HERO */
-.hero {
-  width:100%; height:430px;
-  flex-shrink:0;
-  background-color:#0a1f15;
-  background-image:linear-gradient(155deg,#0a1f15 0%,#122a1e 35%,#0c1e13 70%,#091510 100%);
-  background-size:cover; background-position:center;
-  position:relative; overflow:hidden;
-  print-color-adjust:exact; -webkit-print-color-adjust:exact;
-}
-/* hero-glow removed */
-#heroBgWrap {
-  position:absolute; inset:0;
-  background-size:cover; background-position:center; z-index:1;
-  print-color-adjust:exact; -webkit-print-color-adjust:exact;
-}
-#heroOverlay {
-  position:absolute; inset:0;
-  background:
-    linear-gradient(to right,rgba(5,20,12,.72) 0%,rgba(5,20,12,.28) 45%,rgba(5,20,12,.52) 100%),
-    linear-gradient(to bottom,rgba(0,0,0,.42) 0%,rgba(0,0,0,.08) 50%,rgba(0,0,0,.52) 100%);
-  z-index:2; pointer-events:none; display:none;
-  print-color-adjust:exact; -webkit-print-color-adjust:exact;
-}
-/* Hero upload placeholder */
-#heroPh {
-  position:absolute; inset:0; z-index:3;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  cursor:pointer; color:rgba(255,255,255,.4); gap:10px; transition:all .2s;
-}
-#heroPh:hover { color:rgba(255,255,255,.7); background:rgba(255,255,255,.03); }
-#heroPh .ph-ico { font-size:48px; }
-#heroPh .ph-txt { font-size:14px; font-weight:700; letter-spacing:.5px; font-family:'Montserrat',sans-serif; }
-#heroPh .ph-sub { font-size:10px; opacity:.6; }
-/* Change image btn */
-#heroChangBtn {
-  position:absolute; top:8px; left:50%; transform:translateX(-50%);
-  z-index:200; background:rgba(0,0,0,.6); color:white;
-  border:1.5px solid rgba(255,255,255,.3); border-radius:20px;
-  padding:5px 14px; font-size:10px; font-weight:700;
-  font-family:'Inter',sans-serif; cursor:pointer; display:none;
-  backdrop-filter:blur(4px); transition:all .2s;
-}
-#heroChangBtn:hover { background:rgba(0,0,0,.88); }
-body.edit-mode #heroChangBtn { display:block; }
-
-/* ═══════════════════════════════════════════ HERO ELEMENT WRAPPER */
-.hero-el {
-  position:absolute; z-index:10; user-select:none;
-  touch-action:none;
-}
-body.edit-mode .hero-el {
-  cursor:move;
-  outline:1.5px dashed rgba(96,165,250,.55);
-  border-radius:4px;
-  padding:2px;
-}
-body.edit-mode .hero-el:hover { outline:2px solid #60a5fa; z-index:50; }
-body.edit-mode .hero-el.dragging { outline:2px solid #3b82f6; opacity:.92; z-index:100; box-shadow:0 8px 32px rgba(0,0,0,.45); }
-
-.el-del {
-  position:absolute; top:-10px; right:-10px;
-  width:20px; height:20px; background:#ef4444; color:white;
-  border:2px solid white; border-radius:50%; font-size:12px;
-  cursor:pointer; display:none; align-items:center; justify-content:center;
-  z-index:300; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,.3); line-height:1;
-  transition:all .15s;
-}
-.el-del:hover { background:#b91c1c; transform:scale(1.15); }
-body.edit-mode .hero-el:hover .el-del,
-body.edit-mode .hero-el.active-el .el-del { display:flex; }
-
-.el-handle {
-  position:absolute; top:-10px; left:-10px;
-  width:20px; height:20px; background:#3b82f6; color:white;
-  border:2px solid white; border-radius:50%; font-size:9px;
-  display:none; align-items:center; justify-content:center;
-  z-index:300; box-shadow:0 2px 8px rgba(0,0,0,.3);
-}
-body.edit-mode .hero-el:hover .el-handle,
-body.edit-mode .hero-el.active-el .el-handle { display:flex; }
-
-/* ═══════════════════════════════════════════ HERO INNER ELEMENTS */
-.series-name {
-  font-size:46px; font-weight:900; letter-spacing:4px;
-  color:white; text-shadow:0 2px 16px rgba(0,0,0,.7); line-height:1;
-  text-transform:uppercase; font-family:'Montserrat',sans-serif;
-}
-.series-sub {
-  font-size:13px; font-weight:600; letter-spacing:7px;
-  color:rgba(255,255,255,.65); margin-top:4px; text-transform:uppercase;
-  font-family:'Montserrat',sans-serif;
-}
-.brand-box {
-  background:white; border-radius:10px; padding:9px 16px; text-align:center;
-  min-width:145px; box-shadow:0 6px 24px rgba(0,0,0,.35);
-}
-.brand-box .bname { font-size:17px; font-weight:900; color:#0055a0; letter-spacing:1px; font-family:'Montserrat',sans-serif; }
-.brand-box .btag  { font-size:8px; color:#666; font-weight:600; margin-top:2px; }
-.warranty-badge {
-  width:82px; height:82px;
-  background:radial-gradient(circle at 38% 38%,#ef5350,#b71c1c);
-  border-radius:50%; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; text-align:center; color:white;
-  box-shadow:0 6px 24px rgba(183,28,28,.55),inset 0 0 0 3px rgba(255,255,255,.3),inset 0 0 0 5px rgba(200,0,0,.2);
-  print-color-adjust:exact; -webkit-print-color-adjust:exact;
-}
-.w-num  { font-size:24px; font-weight:900; line-height:1; font-family:'Montserrat',sans-serif; }
-.w-text { font-size:7.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; line-height:1.5; }
-.features-list { display:flex; flex-direction:column; gap:9px; }
-.feat-item { display:flex; align-items:center; gap:9px; }
-.feat-dot {
-  width:20px; height:20px;
-  background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.35);
-  border-radius:50%; display:flex; align-items:center; justify-content:center;
-  font-size:9px; color:#7fde97; flex-shrink:0; font-weight:700;
-  print-color-adjust:exact; -webkit-print-color-adjust:exact;
-}
-.feat-text { font-size:9.5px; font-weight:600; color:rgba(255,255,255,.88); }
-.specs-card {
-  background:rgba(0,0,0,.42); border:1px solid rgba(255,255,255,.12);
-  border-radius:10px; padding:10px 14px; min-width:165px;
-  print-color-adjust:exact; -webkit-print-color-adjust:exact;
-}
-.spec-row { display:flex; align-items:center; gap:6px; font-size:9px; margin-bottom:5px; color:rgba(255,255,255,.8); }
-.spec-row:last-child { margin-bottom:0; }
-.spec-lbl { font-weight:700; color:#7fdecc; }
-.badge-360 {
-  width:68px; height:68px; background:rgba(0,0,0,.45);
-  border:2.5px solid rgba(255,255,255,.25); border-radius:50%;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
-  print-color-adjust:exact; -webkit-print-color-adjust:exact;
-}
-.b360-num  { font-size:19px; font-weight:900; color:#ffd54f; line-height:1; font-family:'Montserrat',sans-serif; }
-.b360-text { font-size:7px; font-weight:700; color:rgba(255,255,255,.75); text-transform:uppercase; letter-spacing:.5px; }
-.hero-prod-name   { font-size:24px; font-weight:800; color:white; text-shadow:0 2px 12px rgba(0,0,0,.6); line-height:1.1; font-family:'Montserrat',sans-serif; }
-.hero-prod-detail { font-size:11px; color:rgba(255,255,255,.75); font-weight:500; margin-top:5px; line-height:1.7; }
-.hero-prod-mrp    { font-size:17px; font-weight:800; color:#ffd54f; margin-top:5px; text-shadow:0 2px 8px rgba(0,0,0,.4); font-family:'Montserrat',sans-serif; }
-.hero-btm-label   { font-size:7.5px; font-weight:700; letter-spacing:2.5px; color:rgba(255,255,255,.4); text-transform:uppercase; white-space:nowrap; }
-
-/* ═══════════════════════════════════════════ CUSTOM SHAPES */
-.cshape { display:flex; align-items:center; justify-content:center; text-align:center; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
-.cshape.is-rect   { border-radius:8px; }
-.cshape.is-circle { border-radius:50%; }
-.cshape.is-badge  { border-radius:50%; }
-.shape-inner { font-size:10px; font-weight:700; color:white; padding:6px; font-family:'Montserrat',sans-serif; text-align:center; line-height:1.3; }
-
-/* ═══════════════════════════════════════════ PRODUCTS */
-.products-section {
-  height: calc(1123px - 430px); /* exact remaining A4 space: 693px */
-  background:#fff;
-  padding:14px 18px 12px;
-  display:flex; flex-direction:column;
-  overflow:hidden;
-  print-color-adjust:exact; -webkit-print-color-adjust:exact;
-}
-.prod-section-hdr { display:flex; align-items:center; gap:12px; margin-bottom:11px; flex-shrink:0; }
-.psh-line  { flex:1; height:2px; background:linear-gradient(90deg,#0055a0,transparent); border-radius:2px; }
-.psh-liner { flex:1; height:2px; background:linear-gradient(90deg,transparent,#0055a0); border-radius:2px; }
-.psh-title { font-size:10px; font-weight:800; color:#0055a0; letter-spacing:3px; text-transform:uppercase; white-space:nowrap; font-family:'Montserrat',sans-serif; }
-.products-grid {
-  display:grid; gap:9px;
-  flex:1; min-height:0;
-  /* grid-template-rows set by JS fitGrid() for exact filling */
-}
-.product-card {
-  border:1px solid #e8edf2; border-radius:9px; padding:9px 7px 8px;
-  text-align:center; background:#fdfdff; transition:all .2s;
-  display:flex; flex-direction:column; align-items:center;
-  break-inside:avoid; height:100%; /* fill grid cell completely */
-  print-color-adjust:exact; -webkit-print-color-adjust:exact;
-}
-.product-card:hover { border-color:#90caf9; box-shadow:0 4px 16px rgba(0,85,160,.1); transform:translateY(-1px); }
-.prod-img-box {
-  width:100%; flex:1;      /* grows freely with card height */
-  min-height:50px;         /* no max-height — let it scale */
-  display:flex; align-items:center; justify-content:center;
-  margin-bottom: calc(4px * var(--card-scale, 1));
-  cursor:pointer; border-radius:6px;
-  position:relative; overflow:hidden;
-}
-.prod-img-box img { max-width:100%; max-height:100%; object-fit:contain; display:none; }
-.prod-img-ph {
-  width:100%; height:100%;
-  background:linear-gradient(145deg,#f0f4f9,#e8f0fe);
-  border:1.5px dashed #b0c4de; border-radius:6px;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  color:#8fa8c8; font-size:8px; font-weight:700; gap:3px; cursor:pointer; transition:all .2s;
-}
-.prod-img-ph .ps { font-size:20px; line-height:1; opacity:.5; }
-.prod-img-ph:hover { background:linear-gradient(145deg,#dceeff,#c8e6fb); border-color:#42a5f5; color:#1565c0; }
-body.edit-mode .prod-img-box::after {
-  content:'📷'; position:absolute; top:3px; right:3px;
-  font-size:12px; background:rgba(21,101,192,.8); border-radius:4px;
-  padding:2px 4px; opacity:0; transition:opacity .2s;
-}
-body.edit-mode .prod-img-box:hover::after { opacity:1; }
-.prod-name {
-  font-size: calc(9.5px * var(--card-scale, 1));
-  font-weight:700; color:#1a2340; text-align:center;
-  line-height:1.35; margin-bottom: calc(3px * var(--card-scale, 1));
-  font-family:'Montserrat',sans-serif;
-  flex-shrink: 0;
-}
-.prod-mrp {
-  font-size: calc(10px * var(--card-scale, 1));
-  font-weight:800; color:#0055a0;
-  margin-bottom: calc(2px * var(--card-scale, 1));
-  flex-shrink: 0;
-}
-.prod-packing {
-  font-size: calc(8px * var(--card-scale, 1));
-  color:#7a8ea8; font-weight:600;
-  flex-shrink: 0;
-}
-
-/* ═══════════════════════════════════════════ EDIT MODE */
-body.edit-mode [contenteditable="true"] {
-  outline:1.5px dashed rgba(96,165,250,.6); border-radius:2px;
-  cursor:text; min-width:8px; min-height:8px;
-}
-body.edit-mode [contenteditable="true"]:focus {
-  outline:2px solid #60a5fa; background:rgba(96,165,250,.08); border-radius:3px;
-}
-
-/* ═══════════════════════════════════════════ PROPERTIES PANEL */
-.pp-empty { font-size:10px; color:rgba(255,255,255,.28); text-align:center; padding:12px 6px; }
-.pp-group { margin-bottom:12px; }
-.pp-group-title {
-  font-size:9px; font-weight:700; color:rgba(255,255,255,.38); text-transform:uppercase;
-  letter-spacing:1.5px; margin-bottom:7px; padding-bottom:4px;
-  border-bottom:1px solid rgba(255,255,255,.07);
-}
-.pp-row { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
-.pp-label { font-size:10px; color:rgba(255,255,255,.5); width:72px; flex-shrink:0; }
-.pp-input {
-  flex:1; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11);
-  border-radius:5px; padding:4px 7px; font-size:11px; color:white;
-  font-family:'Inter',sans-serif; min-width:0;
-}
-.pp-input:focus { border-color:rgba(96,165,250,.5); outline:none; background:rgba(255,255,255,.11); }
-.pp-color {
-  width:34px; height:26px; padding:2px 3px; border-radius:5px;
-  border:1px solid rgba(255,255,255,.15); cursor:pointer; background:transparent;
-}
-.pp-select {
-  flex:1; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11);
-  border-radius:5px; padding:4px 5px; font-size:11px; color:white;
-  font-family:'Inter',sans-serif; cursor:pointer;
-}
-.pp-select option { background:#1e2d47; color:white; }
-.pp-btn {
-  padding:4px 10px; border:1px solid rgba(255,255,255,.15); border-radius:5px;
-  background:rgba(255,255,255,.07); color:rgba(255,255,255,.7);
-  font-size:10px; cursor:pointer; transition:all .15s; white-space:nowrap;
-}
-.pp-btn:hover { background:rgba(255,255,255,.13); color:white; }
-.pp-btn-danger { border-color:rgba(239,68,68,.35); color:rgba(239,68,68,.7); }
-.pp-btn-danger:hover { background:rgba(239,68,68,.12); color:#f87171; }
-.pp-btn-add {
-  width:100%; justify-content:center; margin-top:5px;
-  border-color:rgba(74,222,128,.3); color:rgba(74,222,128,.75);
-}
-.pp-btn-add:hover { background:rgba(74,222,128,.1); color:#4ade80; }
-.pp-sub-item {
-  display:flex; gap:5px; align-items:center; margin-bottom:4px;
-  background:rgba(255,255,255,.04); border-radius:5px; padding:4px 6px;
-}
-.pp-sub-item input {
-  flex:1; background:transparent; border:none; color:rgba(255,255,255,.8);
-  font-size:10px; font-family:'Inter',sans-serif; outline:none; min-width:0;
-}
-.pp-sub-item input:focus { color:white; }
-.pp-sub-del {
-  width:18px; height:18px; border:none; background:none;
-  color:rgba(239,68,68,.5); cursor:pointer; font-size:14px;
-  display:flex; align-items:center; justify-content:center;
-  border-radius:3px; flex-shrink:0; line-height:1;
-}
-.pp-sub-del:hover { color:#f87171; background:rgba(239,68,68,.1); }
-.pp-sub-lbl { font-size:9px; color:rgba(255,255,255,.3); width:30px; flex-shrink:0; }
-
-/* Scrollable prop panel body */
-#prop-panel-body {
-  max-height: 280px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(96,165,250,.4) transparent;
-}
-#prop-panel-body::-webkit-scrollbar { width: 4px; }
-#prop-panel-body::-webkit-scrollbar-track { background: transparent; }
-#prop-panel-body::-webkit-scrollbar-thumb { background: rgba(96,165,250,.4); border-radius: 4px; }
-
-/* ═══════════════════════════════════════════ MOBILE RESPONSIVE */
-@media (max-width: 1050px) {
-  #main-layout { flex-direction: column; align-items: center; padding: 16px; gap:24px; }
-  #editor-panel { width: 100%; max-width: 794px; position: static; flex-direction: row; flex-wrap: wrap; justify-content: center; }
-  #editor-panel .ep-card { flex: 1; min-width: 220px; }
-}
-
-@media (max-width: 830px) {
-  #toolbar { height:auto; min-height:52px; flex-wrap: wrap; padding:10px; gap:8px; justify-content:center; }
-  .tb-brand { width:100%; justify-content:center; margin-right:0; }
-  .tb-divider { display:none; }
-  .tb-btn { flex:1 1 145px; justify-content:center; min-height:36px; }
-  .tb-dl { margin-left:0; }
-  #tb-hint { display:none; }
-
-  #main-layout { 
-    display:flex;
-    align-items:center;
-    padding: 10px;
-    gap:14px;
-    overflow-x: hidden;
-  }
-
-  #editor-panel {
-    max-width:100%;
-    gap:8px;
-  }
-
-  #editor-panel .ep-card {
-    min-width:min(100%, 220px);
-  }
-
-  #catalogue-stage {
-    width:calc(100vw - 20px);
-    height:calc(1123px * var(--catalogue-scale, 1));
-    max-width:794px;
-    overflow:visible;
-  }
-
-  #catalogue {
-    transform:scale(var(--catalogue-scale, 1));
-    box-shadow:0 12px 40px rgba(0,0,0,0.42);
-  }
-}
-
-@media (max-width: 440px) {
-  .tb-brand-text h2 { font-size:12px; }
-  .tb-brand-text p { display:none; }
-  .tb-btn { flex-basis:100%; }
-  .ep-card { border-radius:8px; }
-  #layersList { max-height:130px; }
-}
-
-/* ═══════════════════════════════════════════ TOAST */
-#toast-container {
-  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
-  z-index:99999; display:flex; flex-direction:column; align-items:center; gap:8px;
-  pointer-events:none;
-}
-.toast {
-  background:#1e3a5f; color:white; padding:10px 20px; border-radius:20px;
-  font-size:12px; font-weight:600; font-family:'Inter',sans-serif;
-  border:1px solid rgba(99,179,237,.35); box-shadow:0 8px 32px rgba(0,0,0,.5);
-  animation: toastIn .25s ease, toastOut .3s ease 2.5s forwards;
-  pointer-events:auto;
-}
-.toast.success { background:#14532d; border-color:rgba(74,222,128,.4); }
-.toast.error   { background:#7f1d1d; border-color:rgba(239,68,68,.4); }
-.tb-save {
-  background:linear-gradient(135deg,#1d4ed8,#1e40af); color:white;
-  box-shadow:0 2px 10px rgba(29,78,216,.35);
-}
-.tb-save:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(29,78,216,.5); }
-.tb-load { background:rgba(255,255,255,.08); color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.14); }
-.tb-load:hover { background:rgba(255,255,255,.14); }
-.tb-reset {
-  background:rgba(239,68,68,.12); color:rgba(248,113,113,.85);
-  border:1px solid rgba(239,68,68,.25);
-}
-.tb-reset:hover { background:rgba(239,68,68,.22); color:#f87171; border-color:rgba(239,68,68,.5); }
-.tb-export { background:rgba(16,185,129,.1); color:rgba(52,211,153,.85); border:1px solid rgba(16,185,129,.25); }
-.tb-export:hover { background:rgba(16,185,129,.2); color:#34d399; }
-.tb-import { background:rgba(168,85,247,.1); color:rgba(192,132,252,.85); border:1px solid rgba(168,85,247,.25); }
-.tb-import:hover { background:rgba(168,85,247,.2); color:#c084fc; }
-@keyframes toastIn  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
-@keyframes toastOut { from { opacity:1; } to { opacity:0; pointer-events:none; } }
-
-/* ═══════════════════════════════════════════ PRINT */
-@media print {
-  body { background:white; }
-  .hero-el * { text-shadow:none !important; box-shadow:none !important; }
-  #toolbar, #editor-panel, #heroChangBtn, .el-del, .el-handle { display:none !important; }
-  #main-layout { padding:0; justify-content:center; }
-  #catalogue-stage { width:794px; height:1123px; max-width:none; }
-  #catalogue { box-shadow:none; border-radius:0; width:794px; transform:none !important; }
-  .hero, .hero-glow, #heroBgWrap, #heroOverlay { print-color-adjust:exact !important; -webkit-print-color-adjust:exact !important; }
-  .product-card { break-inside:avoid; }
-  @page { size:A4 portrait; margin:0; }
-}
-</style>
+<link rel="stylesheet" href="saba.css">
 </head>
-<body>
+<body class="saba-layout">
 
-<!-- ═══════ TOOLBAR ═══════ -->
-<div id="toolbar">
-  <div class="tb-brand">
-    <div class="tb-brand-icon">💧</div>
+<!-- ═══════ TOP TOOLBAR ═══════ -->
+<div id="saba-top-toolbar">
+  <div class="tb-brand" onclick="showTemplateBrowser()" style="cursor: pointer;" title="Go to Templates (Home)">
+    <div class="tb-brand-icon">✦</div>
     <div class="tb-brand-text">
-      <h2>Catalogue Creator</h2>
-      <p>Enable Edit Mode → Design → Download PDF</p>
+      <h2>SABA</h2>
+      <p>Searchable Asset &amp; Brand Authoring</p>
     </div>
   </div>
-  <div class="tb-divider"></div>
-  <button class="tb-btn tb-edit" id="editBtn" onclick="toggleEdit()">✏️ Edit Mode</button>
-  <span id="tb-hint">OFF</span>
-  <div class="tb-divider"></div>
-  <button class="tb-btn tb-save"   id="saveBtn" onclick="saveTemplate()"      title="Save to browser memory">💾 Save</button>
-  <button class="tb-btn tb-load"            onclick="loadTemplatePrompt()"   title="Load from browser memory">📂 Load</button>
-  <button class="tb-btn tb-export"          onclick="exportDesign()"          title="Download design as JSON file">⬇️ Export</button>
-  <button class="tb-btn tb-import"          onclick="importDesign()"          title="Upload a saved JSON design file">⬆️ Import</button>
-  <button class="tb-btn tb-reset"           onclick="resetTemplate()"         title="Reset everything to default">🔄 Reset</button>
-  <button class="tb-btn tb-dl" onclick="downloadPDF()">📄 Download PDF</button>
+  <div class="tb-center">
+    <select id="canvas-size" title="Canvas Size">
+      <option value="A4">📄 A4 Portrait</option>
+      <option value="A5">📄 A5 Portrait</option>
+      <option value="Square">⬜ Square</option>
+      <option value="Landscape">🖼 Landscape</option>
+    </select>
+    <div class="tb-divider"></div>
+    <button class="tb-btn tb-edit" id="editBtn" onclick="toggleEdit()">✏️ Edit Mode</button>
+    <span id="tb-hint">Click Edit Mode to start editing</span>
+    <div class="tb-divider"></div>
+    <button class="tb-btn" id="undoBtn" onclick="undoAction()" title="Undo (Ctrl+Z)">↩ Undo</button>
+    <button class="tb-btn" id="redoBtn" onclick="redoAction()" title="Redo (Ctrl+Y)">↪ Redo</button>
+    <div class="tb-divider"></div>
+    <select id="zoom-level" title="Zoom Level">
+      <option value="50">🔍 50%</option>
+      <option value="75">🔍 75%</option>
+      <option value="100" selected>🔍 100%</option>
+      <option value="125">🔍 125%</option>
+      <option value="150">🔍 150%</option>
+    </select>
+  </div>
+  <div class="tb-right">
+    <button class="tb-btn tb-save" onclick="saveTemplate()" title="Save to browser">💾 Save</button>
+    <button class="tb-btn tb-export" onclick="exportDesign()" title="Export JSON">⬇ Export</button>
+    <button class="tb-btn tb-import" onclick="importDesign()" title="Import JSON">⬆ Import</button>
+    <button class="tb-btn tb-dl" onclick="downloadPDF()" title="Download PDF">📄 PDF</button>
+    <button class="tb-btn tb-reset" onclick="resetTemplate()" title="Reset all">🔄 Reset</button>
+  </div>
 </div>
 
-<!-- TOAST CONTAINER -->
+<!-- ═══════ MAIN WORKSPACE ═══════ -->
+<div id="saba-workspace">
+
+  <!-- LEFT SIDEBAR -->
+  <div id="saba-left-sidebar">
+    <div class="saba-tabs">
+      <button class="tab-btn active" onclick="switchTab('search', this)" title="Search elements">🔍<span>Search</span></button>
+      <button class="tab-btn" onclick="switchTab('assets', this)" title="Asset library">📦<span>Assets</span></button>
+      <button class="tab-btn" onclick="switchTab('brand', this)" title="Brand Kit">🎨<span>Brand</span></button>
+      <button class="tab-btn" onclick="switchTab('products', this)" title="Product Database">🗂<span>Products</span></button>
+      <button class="tab-btn" onclick="switchTab('templates', this)" title="Templates">📄<span>Templates</span></button>
+    </div>
+
+    <div class="saba-tab-content">
+
+      <!-- SEARCH TAB -->
+      <div id="tab-search" class="tab-pane active">
+        <div class="tab-section-title">Search Elements</div>
+        <input type="text" id="element-search" class="saba-input" placeholder="Search: text, badge, card, shape..." oninput="searchElements(this.value)">
+        <div class="search-actions">
+          <button class="saba-btn" onclick="searchElements(document.getElementById('element-search').value)">Library Search</button>
+          <button class="saba-btn secondary" onclick="searchGlobalAssets()">Global Assets</button>
+        </div>
+        <div id="search-results" class="search-results-grid"></div>
+        <div id="global-search-results" class="search-results-grid global-results"></div>
+        <button class="saba-btn ghost full-width" onclick="addImageFromUrl()">Add Image by URL</button>
+        <div id="search-empty" class="search-empty">Start typing to find elements...</div>
+      </div>
+
+      <!-- ASSETS TAB -->
+      <div id="tab-assets" class="tab-pane">
+
+        <!-- Grid Controls (always visible in assets) -->
+        <div class="ep-card">
+          <div class="ep-title">⊞ Products Grid</div>
+          <div class="ep-body">
+            <div class="grid-row">
+              <span class="grid-lbl">Rows</span>
+              <div class="grid-ctrl">
+                <button class="g-btn" onclick="changeGrid('r',-1)">−</button>
+                <span class="g-val" id="rVal">3</span>
+                <button class="g-btn" onclick="changeGrid('r',+1)">+</button>
+              </div>
+            </div>
+            <div class="grid-row">
+              <span class="grid-lbl">Columns</span>
+              <div class="grid-ctrl">
+                <button class="g-btn" onclick="changeGrid('c',-1)">−</button>
+                <span class="g-val" id="cVal">4</span>
+                <button class="g-btn" onclick="changeGrid('c',+1)">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hero BG -->
+        <div class="ep-card" style="overflow:visible;">
+          <div class="ep-title">🌄 Hero Background</div>
+          <div class="ep-body">
+            <div class="grid-row" style="flex-direction:column;align-items:flex-start;gap:5px;">
+              <div style="display:flex;justify-content:space-between;width:100%;">
+                <span class="grid-lbl">BG Opacity</span>
+                <span class="pp-range-val" id="heroBgOpacityVal" style="color:#60a5fa;font-weight:700;font-size:12px;">100%</span>
+              </div>
+              <input type="range" class="pp-range" id="heroBgOpacity" min="0" max="100" value="100" style="width:100%;" oninput="setHeroBgOpacity(this.value)">
+            </div>
+            <div class="grid-row" style="margin-top:8px;">
+              <span class="grid-lbl">Dark Overlay</span>
+              <div style="display:flex;gap:5px;">
+                <button class="pp-btn" onclick="toggleHeroOverlay(false)" id="ovrOff">Off</button>
+                <button class="pp-btn" onclick="toggleHeroOverlay(true)"  id="ovrOn">On</button>
+              </div>
+            </div>
+            <div class="grid-row" style="margin-top:6px;">
+              <span class="grid-lbl">Change BG</span>
+              <button class="pp-btn" onclick="pickHeroImg()">📷 Upload</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Page Colors -->
+        <div class="ep-card">
+          <div class="ep-title">🎨 Page Colors</div>
+          <div class="ep-body">
+            <div class="page-color-group">
+              <label class="brand-label">Full Page</label>
+              <div class="page-color-row">
+                <button class="page-swatch" style="background:#ffffff" onclick="setPageColor('page','#ffffff')" title="White"></button>
+                <button class="page-swatch" style="background:#f8fafc" onclick="setPageColor('page','#f8fafc')" title="Soft Grey"></button>
+                <button class="page-swatch" style="background:#fff7ed" onclick="setPageColor('page','#fff7ed')" title="Warm"></button>
+                <button class="page-swatch" style="background:#ecfeff" onclick="setPageColor('page','#ecfeff')" title="Aqua"></button>
+                <input type="color" class="brand-color-swatch" id="page-bg-color" value="#ffffff" oninput="setPageColor('page',this.value)">
+              </div>
+            </div>
+            <div class="page-color-group">
+              <label class="brand-label">Hero Area</label>
+              <div class="page-color-row">
+                <button class="page-swatch" style="background:#0a1f15" onclick="setPageColor('hero','#0a1f15')" title="Deep Green"></button>
+                <button class="page-swatch" style="background:#0f172a" onclick="setPageColor('hero','#0f172a')" title="Dark Slate"></button>
+                <button class="page-swatch" style="background:#1d4ed8" onclick="setPageColor('hero','#1d4ed8')" title="Blue"></button>
+                <button class="page-swatch" style="background:#7c2d12" onclick="setPageColor('hero','#7c2d12')" title="Copper"></button>
+                <input type="color" class="brand-color-swatch" id="hero-bg-color" value="#0a1f15" oninput="setPageColor('hero',this.value)">
+              </div>
+            </div>
+            <div class="page-color-group">
+              <label class="brand-label">Products Area</label>
+              <div class="page-color-row">
+                <button class="page-swatch" style="background:#ffffff" onclick="setPageColor('products','#ffffff')" title="White"></button>
+                <button class="page-swatch" style="background:#f1f5f9" onclick="setPageColor('products','#f1f5f9')" title="Light Grey"></button>
+                <button class="page-swatch" style="background:#fef3c7" onclick="setPageColor('products','#fef3c7')" title="Cream"></button>
+                <button class="page-swatch" style="background:#eef2ff" onclick="setPageColor('products','#eef2ff')" title="Lavender"></button>
+                <input type="color" class="brand-color-swatch" id="products-bg-color" value="#ffffff" oninput="setPageColor('products',this.value)">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add to Hero -->
+        <div class="ep-card">
+          <div class="ep-title">➕ Add to Hero</div>
+          <div class="ep-body" style="padding:8px;">
+            <div class="shapes-grid">
+              <button class="shape-btn" onclick="addShape('rect')"><span class="s-ico">▬</span><span class="s-lbl">Rectangle</span></button>
+              <button class="shape-btn" onclick="addShape('circle')"><span class="s-ico">⭕</span><span class="s-lbl">Circle</span></button>
+              <button class="shape-btn" onclick="addShape('triangle')"><span class="s-ico">△</span><span class="s-lbl">Triangle</span></button>
+              <button class="shape-btn" onclick="addShape('text')"><span class="s-ico">T</span><span class="s-lbl">Text</span></button>
+              <button class="shape-btn" onclick="addShape('badge')"><span class="s-ico">🏅</span><span class="s-lbl">Badge</span></button>
+              <button class="shape-btn" onclick="addShape('imgbox')"><span class="s-ico">🖼</span><span class="s-lbl">Image</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Catalogue Blocks -->
+        <div class="ep-card">
+          <div class="ep-title">📋 Catalogue Blocks</div>
+          <div class="ep-body" style="padding:8px;">
+            <div class="shapes-grid">
+              <button class="shape-btn" onclick="addBlock('warranty')"><span class="s-ico">🏷</span><span class="s-lbl">Warranty</span></button>
+              <button class="shape-btn" onclick="addBlock('pricetag')"><span class="s-ico">💰</span><span class="s-lbl">Price Tag</span></button>
+              <button class="shape-btn" onclick="addBlock('discount')"><span class="s-ico">%</span><span class="s-lbl">Discount</span></button>
+              <button class="shape-btn" onclick="addBlock('specbox')"><span class="s-ico">📊</span><span class="s-lbl">Spec Box</span></button>
+              <button class="shape-btn" onclick="addBlock('contactblock')"><span class="s-ico">📞</span><span class="s-lbl">Contact</span></button>
+              <button class="shape-btn" onclick="addBlock('featurelist')"><span class="s-ico">✅</span><span class="s-lbl">Features</span></button>
+              <button class="shape-btn" onclick="addBlock('divider')"><span class="s-ico">━</span><span class="s-lbl">Divider</span></button>
+              <button class="shape-btn" onclick="addBlock('catHeader')"><span class="s-ico">🏷</span><span class="s-lbl">Cat.Header</span></button>
+              <button class="shape-btn" onclick="addBlock('star')"><span class="s-ico">⭐</span><span class="s-lbl">Star</span></button>
+              <button class="shape-btn" onclick="addBlock('table')"><span class="s-ico">▦</span><span class="s-lbl">Table</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Card Style -->
+        <div class="ep-card">
+          <div class="ep-title">📋 Product Card Style</div>
+          <div class="ep-body" style="padding:8px;max-height:280px;overflow-y:auto;scrollbar-width:thin;">
+            <div class="pp-group">
+              <div class="pp-group-title">🔤 Product Name</div>
+              <div class="pp-row"><span class="pp-label">Color</span><input class="pp-color" type="color" value="#1a2340" id="pn-color" oninput="setProdStyle('prod-name','color',this.value)"></div>
+              <div class="pp-row"><span class="pp-label">Font Size</span><input class="pp-input" type="number" value="9" min="6" max="24" id="pn-size" oninput="setProdStyle('prod-name','fontSize',this.value+'px')"></div>
+              <div class="pp-row"><span class="pp-label">Weight</span>
+                <select class="pp-select" id="pn-weight" onchange="setProdStyle('prod-name','fontWeight',this.value)">
+                  <option value="400">Regular</option><option value="600">Semi-Bold</option><option value="700" selected>Bold</option><option value="800">Extra Bold</option><option value="900">Black</option>
+                </select>
+              </div>
+              <div class="pp-row"><span class="pp-label">Style</span>
+                <div style="display:flex;gap:4px;">
+                  <button class="pp-btn" onclick="setProdStyle('prod-name','fontStyle','normal')">Normal</button>
+                  <button class="pp-btn" onclick="setProdStyle('prod-name','fontStyle','italic')">Italic</button>
+                </div>
+              </div>
+              <div class="pp-row"><span class="pp-label">Align</span>
+                <div style="display:flex;gap:4px;">
+                  <button class="pp-btn" onclick="setProdStyle('prod-name','textAlign','left')">L</button>
+                  <button class="pp-btn" onclick="setProdStyle('prod-name','textAlign','center')">C</button>
+                  <button class="pp-btn" onclick="setProdStyle('prod-name','textAlign','right')">R</button>
+                </div>
+              </div>
+            </div>
+            <div class="pp-group">
+              <div class="pp-group-title">💰 MRP Price</div>
+              <div class="pp-row"><span class="pp-label">Color</span><input class="pp-color" type="color" value="#0055a0" id="mrp-color" oninput="setProdStyle('prod-mrp','color',this.value)"></div>
+              <div class="pp-row"><span class="pp-label">Font Size</span><input class="pp-input" type="number" value="10" min="6" max="26" id="mrp-size" oninput="setProdStyle('prod-mrp','fontSize',this.value+'px')"></div>
+              <div class="pp-row"><span class="pp-label">Weight</span>
+                <select class="pp-select" id="mrp-weight" onchange="setProdStyle('prod-mrp','fontWeight',this.value)">
+                  <option value="600">Semi-Bold</option><option value="700">Bold</option><option value="800" selected>Extra Bold</option><option value="900">Black</option>
+                </select>
+              </div>
+            </div>
+            <div class="pp-group">
+              <div class="pp-group-title">📦 Packing Text</div>
+              <div class="pp-row"><span class="pp-label">Color</span><input class="pp-color" type="color" value="#7a8ea8" id="pk-color" oninput="setProdStyle('prod-packing','color',this.value)"></div>
+              <div class="pp-row"><span class="pp-label">Font Size</span><input class="pp-input" type="number" value="8" min="6" max="20" id="pk-size" oninput="setProdStyle('prod-packing','fontSize',this.value+'px')"></div>
+              <div class="pp-row"><span class="pp-label">Weight</span>
+                <select class="pp-select" id="pk-weight" onchange="setProdStyle('prod-packing','fontWeight',this.value)">
+                  <option value="400">Regular</option><option value="600" selected>Semi-Bold</option><option value="700">Bold</option>
+                </select>
+              </div>
+            </div>
+            <div class="pp-group">
+              <div class="pp-group-title">🃏 Card Appearance</div>
+              <div class="pp-row"><span class="pp-label">Background</span><input class="pp-color" type="color" value="#fdfdff" id="card-bg" oninput="setProdStyle('product-card','background',this.value)"></div>
+              <div class="pp-row"><span class="pp-label">Border</span><input class="pp-color" type="color" value="#e8edf2" id="card-border" oninput="setProdStyle('product-card','borderColor',this.value)"></div>
+              <div class="pp-row"><span class="pp-label">Radius</span><input class="pp-input" type="number" value="9" min="0" max="30" id="card-radius" oninput="setProdStyle('product-card','borderRadius',this.value+'px')"></div>
+            </div>
+            <div class="pp-group">
+              <div class="pp-group-title">🅏 Section Title</div>
+              <div class="pp-row"><span class="pp-label">Color</span><input class="pp-color" type="color" value="#0055a0" id="sec-color" oninput="setProdStyle('psh-title','color',this.value)"></div>
+              <div class="pp-row"><span class="pp-label">Font Size</span><input class="pp-input" type="number" value="10" min="7" max="22" id="sec-size" oninput="setProdStyle('psh-title','fontSize',this.value+'px')"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Layers -->
+        <div class="ep-card">
+          <div class="ep-title">🗂️ Layers</div>
+          <div class="ep-body" style="padding:8px;">
+            <div id="layersList"></div>
+          </div>
+        </div>
+
+        <!-- Properties Panel -->
+        <div class="ep-card" id="prop-card" style="display:none;">
+          <div class="ep-title">⚙️ Properties</div>
+          <div class="ep-body" id="prop-panel-body" style="padding:8px;">
+            <div class="pp-empty">Select an element to edit its properties</div>
+          </div>
+        </div>
+
+      </div><!-- end tab-assets -->
+
+      <!-- BRAND KIT TAB -->
+      <div id="tab-brand" class="tab-pane">
+        <div class="tab-section-title">🎨 Brand Kit</div>
+        <div class="brand-field-group">
+          <label class="brand-label">Company Name</label>
+          <input type="text" id="brand-company" class="saba-input" placeholder="e.g. Nirmal Dhara" oninput="saveBrandKit()">
+        </div>
+        <div class="brand-field-group">
+          <label class="brand-label">Tagline</label>
+          <input type="text" id="brand-tagline" class="saba-input" placeholder="e.g. A Legacy of Trust" oninput="saveBrandKit()">
+        </div>
+        <div class="brand-field-group">
+          <label class="brand-label">Phone</label>
+          <input type="text" id="brand-phone" class="saba-input" placeholder="+91 00000 00000" oninput="saveBrandKit()">
+        </div>
+        <div class="brand-field-group">
+          <label class="brand-label">Email</label>
+          <input type="text" id="brand-email" class="saba-input" placeholder="info@company.com" oninput="saveBrandKit()">
+        </div>
+        <div class="brand-field-group">
+          <label class="brand-label">Website</label>
+          <input type="text" id="brand-website" class="saba-input" placeholder="www.company.com" oninput="saveBrandKit()">
+        </div>
+        <div class="brand-field-group">
+          <label class="brand-label">Address</label>
+          <textarea id="brand-address" class="saba-input" rows="2" placeholder="Full address..." oninput="saveBrandKit()"></textarea>
+        </div>
+        <div class="brand-field-group">
+          <label class="brand-label">GST Number</label>
+          <input type="text" id="brand-gst" class="saba-input" placeholder="22AAAAA0000A1Z5" oninput="saveBrandKit()">
+        </div>
+        <div class="brand-field-group">
+          <label class="brand-label">Instagram</label>
+          <input type="text" id="brand-instagram" class="saba-input" placeholder="@yourhandle" oninput="saveBrandKit()">
+        </div>
+        <div class="brand-field-group">
+          <label class="brand-label">Brand Colors</label>
+          <div class="brand-colors-row">
+            <input type="color" class="brand-color-swatch" id="bc1" value="#0055a0" oninput="saveBrandKit()" title="Primary Color">
+            <input type="color" class="brand-color-swatch" id="bc2" value="#ffd54f" oninput="saveBrandKit()" title="Accent Color">
+            <input type="color" class="brand-color-swatch" id="bc3" value="#ffffff" oninput="saveBrandKit()" title="Background">
+            <input type="color" class="brand-color-swatch" id="bc4" value="#1a2340" oninput="saveBrandKit()" title="Text Color">
+            <input type="color" class="brand-color-swatch" id="bc5" value="#ef4444" oninput="saveBrandKit()" title="Danger/Sale Color">
+            <input type="color" class="brand-color-swatch" id="bc6" value="#22c55e" oninput="saveBrandKit()" title="Success/Available">
+          </div>
+        </div>
+        <div class="brand-field-group">
+          <label class="brand-label">Brand Font</label>
+          <select id="brand-font" class="saba-input" onchange="applyBrandFont(); saveBrandKit()">
+            <option value="'Inter',sans-serif">Inter</option>
+            <option value="'Montserrat',sans-serif" selected>Montserrat</option>
+            <option value="'Poppins',sans-serif">Poppins</option>
+            <option value="'Roboto',sans-serif">Roboto</option>
+            <option value="'Lato',sans-serif">Lato</option>
+            <option value="'Open Sans',sans-serif">Open Sans</option>
+          </select>
+        </div>
+        <div class="brand-field-group">
+          <label class="brand-label">Logo</label>
+          <button class="saba-btn" onclick="pickBrandLogo()">📷 Upload Logo</button>
+          <div id="brand-logo-preview" style="margin-top:6px;"></div>
+        </div>
+        <button class="saba-btn" style="width:100%;margin-top:10px;" onclick="applyBrandToPage()">⚡ Apply Brand to Page</button>
+        <button class="saba-btn" style="width:100%;margin-top:6px;background:#374151;" onclick="saveBrandKit()">💾 Save Brand Kit</button>
+      </div>
+
+      <!-- PRODUCTS TAB -->
+      <div id="tab-products" class="tab-pane">
+        <div class="tab-section-title">🗂 Product Database</div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;">
+          <button class="saba-btn" style="flex:1;" onclick="showAddProductModal()">+ Add Product</button>
+          <button class="saba-btn" style="flex:1;background:#374151;" onclick="importProductsCSV()">📂 CSV Import</button>
+        </div>
+        <input type="text" class="saba-input" placeholder="Search products..." oninput="filterProductDB(this.value)" style="margin-bottom:8px;">
+        <div id="product-db-list" style="max-height:400px;overflow-y:auto;"></div>
+      </div>
+
+      <!-- TEMPLATES TAB -->
+      <div id="tab-templates" class="tab-pane">
+        <div class="tab-section-title">Start Fresh</div>
+        <button class="tmpl-btn" onclick="applyTemplate('blank-canvas')">
+          <div class="tmpl-preview tmpl-blank"><div class="tmpl-hero"></div><div class="tmpl-grid"></div></div>
+          <div class="tmpl-info"><strong>Blank Canvas</strong><span>Start from scratch</span></div>
+        </button>
+
+        <div class="tab-section-title" style="margin-top:14px;">Ready-Made</div>
+        <button class="tmpl-btn tmpl-featured" onclick="applyTemplate('classic-retail')">
+          <div class="tmpl-preview tmpl-water"><div class="tmpl-hero"></div><div class="tmpl-grid"></div></div>
+          <div class="tmpl-info"><strong>⭐ Classic Retail</strong><span>Hero + product grid</span></div>
+        </button>
+        <button class="tmpl-btn" onclick="applyTemplate('split-electronics')">
+          <div class="tmpl-preview tmpl-modern"><div class="tmpl-hero"></div><div class="tmpl-grid"></div></div>
+          <div class="tmpl-info"><strong>Split Screen</strong><span>Left story, right products</span></div>
+        </button>
+        <button class="tmpl-btn" onclick="applyTemplate('minimalist-jewelry')">
+          <div class="tmpl-preview tmpl-business"><div class="tmpl-hero"></div><div class="tmpl-grid"></div></div>
+          <div class="tmpl-info"><strong>Minimalist Elegant</strong><span>Clean luxury layout</span></div>
+        </button>
+
+        <div class="tab-section-title" style="margin-top:14px;">Saved Designs</div>
+        <button class="saba-btn" style="width:100%;" onclick="loadTemplatePrompt()">📂 Load Saved Design</button>
+        <button class="saba-btn" style="width:100%;margin-top:6px;background:#374151;" onclick="openTemplateBrowser()">🖼 Template Gallery</button>
+      </div>
+
+    </div><!-- saba-tab-content -->
+  </div><!-- saba-left-sidebar -->
+
+  <!-- CENTER: CANVAS WORKSPACE -->
+  <div id="saba-center-canvas">
+    <div id="canvas-spacer" style="transition: width 0.2s, height 0.2s; display: flex; justify-content: center; align-items: flex-start; flex-shrink: 0; position: relative; margin: 0 auto;">
+      <div id="canvas-zoom-wrapper">
+      <div id="catalogue-stage">
+        <div id="catalogue">
+          <div class="hero" id="hero">
+            <button id="heroChangBtn" onclick="pickHeroImg()">📷 Change Image</button>
+            <div id="heroBgWrap"></div>
+            <div id="heroOverlay"></div>
+            <div id="heroPh" onclick="pickHeroImg()">
+              <span class="ph-ico">📷</span>
+              <span class="ph-txt">Click to Upload Hero Background</span>
+              <span class="ph-sub">Drag &amp; drop or click to browse</span>
+            </div>
+          </div>
+          <div class="products-section">
+            <div class="prod-section-hdr">
+              <div class="psh-line"></div>
+              <div class="psh-title" contenteditable="false">Our Products</div>
+              <div class="psh-liner"></div>
+            </div>
+            <div class="products-grid" id="productsGrid"></div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="saba-right-panel">
+    <div class="rp-header">⚙️ Properties</div>
+    <div id="rp-prop-body" class="rp-body">
+      <div class="pp-empty">Select an element on canvas to see its properties here</div>
+    </div>
+  </div>
+
+</div><!-- saba-workspace -->
+
+<!-- BOTTOM PAGE BAR -->
+<div id="saba-bottom-bar">
+  <button class="page-add-btn" onclick="addPage()">+ Page</button>
+  <div id="page-tabs">
+    <button class="page-tab active">Page 1</button>
+  </div>
+  <div class="page-bar-right">
+    <span id="page-count-lbl">Page 1 of 1</span>
+    <button class="page-tool-btn" onclick="toggleGrid()" title="Toggle snap grid">⊞ Grid</button>
+    <button class="page-tool-btn" id="guides-btn" onclick="toggleGuides()" title="Alignment guides">⊕ Guides</button>
+  </div>
+</div>
+
+<!-- ADVANCED TEMPLATE BROWSER -->
+<div id="template-browser" style="display:none;">
+  <div class="tb-sidebar">
+    <div class="tb-header-wrap">
+      <div class="tb-logo">✦ SABA</div>
+      <div class="tb-title">Template Library</div>
+      <button class="tb-close-btn" onclick="closeTemplateBrowser()">Back to Editor</button>
+    </div>
+    
+    <div class="tb-search-box">
+      <input type="text" id="tb-search" placeholder="Search templates (e.g. Sanitary, Lookbook)..." onkeyup="filterTemplates()">
+    </div>
+    
+    <div class="tb-filter-section">
+      <label>Industry / Category</label>
+      <select id="tb-cat-filter" onchange="filterTemplates()">
+        <option value="all">All Industries</option>
+        <option value="General">General</option>
+        <option value="Sanitaryware">Sanitaryware & Bath</option>
+        <option value="Furniture">Furniture & Kitchen</option>
+        <option value="Electronics">Electronics</option>
+        <option value="Grocery/FMCG">Grocery / FMCG</option>
+        <option value="Fashion clothing">Fashion & Apparel</option>
+        <option value="Jewellery">Jewellery</option>
+        <option value="Mobile accessories">Mobile Accessories</option>
+        <option value="Hardware and tools">Hardware & Tools</option>
+        <option value="Plumbing materials">Plumbing Materials</option>
+        <option value="Restaurant/menu">Restaurant / Menu</option>
+        <option value="Medical/pharma products">Medical / Pharma</option>
+        <option value="Construction materials">Construction</option>
+        <option value="Real estate brochure">Real Estate</option>
+      </select>
+    </div>
+    
+    <div class="tb-filter-section">
+      <label>Style</label>
+      <select id="tb-style-filter" onchange="filterTemplates()">
+        <option value="all">All Styles</option>
+        <option value="Blank">Blank</option>
+        <option value="Standard">Standard</option>
+        <option value="Modern">Modern</option>
+        <option value="Minimalist">Minimalist</option>
+        <option value="Creative">Creative</option>
+        <option value="Dark">Dark</option>
+        <option value="Premium Brochure">Premium Brochure</option>
+        <option value="Wholesale Price-List">Wholesale Price-List</option>
+        <option value="Dealer/Distributor">Dealer / Distributor</option>
+        <option value="Minimal Clean">Minimal Clean</option>
+        <option value="Image Showcase">Image Showcase</option>
+        <option value="Lookbook">Lookbook</option>
+        <option value="Compact Grid">Compact Grid</option>
+        <option value="Cover Page">Cover Page</option>
+        <option value="Technical Specs">Technical Specs</option>
+        <option value="Bold Promotional">Bold Promotional</option>
+      </select>
+    </div>
+    
+    <div class="tb-filter-section">
+      <label>Page Size</label>
+      <div class="tb-chip-group" id="tb-size-filters">
+        <div class="tb-chip active" onclick="setTbSize('All', this)">All</div>
+        <div class="tb-chip" onclick="setTbSize('A4', this)">A4</div>
+        <div class="tb-chip" onclick="setTbSize('A5', this)">A5</div>
+        <div class="tb-chip" onclick="setTbSize('Square', this)">Square</div>
+      </div>
+    </div>
+    
+    <div class="tb-filter-section tb-toggle-row">
+      <label>Premium Templates</label>
+      <label class="saba-switch">
+        <input type="checkbox" id="tb-premium-filter" onchange="filterTemplates()">
+        <span class="saba-slider round"></span>
+      </label>
+    </div>
+  </div>
+  
+  <div class="tb-main">
+    <div class="tb-top-banner">
+      <h1>Discover Diverse Catalogue Templates</h1>
+      <p>Choose cover, split-screen, masonry, minimalist, dark showcase, price-list, and product-grid structures.</p>
+    </div>
+    <div id="tb-resume-bar" class="tb-resume-bar" style="display:none;">
+      <span>💾 You have a saved design in progress</span>
+      <button class="tb-resume-btn" onclick="resumeSaved()">Continue Editing →</button>
+    </div>
+    <div class="tb-grid" id="tb-grid-container">
+      <!-- Cards rendered here by JS -->
+    </div>
+  </div>
+</div>
+
+
+<!-- ADD PRODUCT MODAL -->
+<div id="add-product-modal" style="display:none;">
+  <div class="modal-overlay" onclick="closeProductModal()"></div>
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>+ Add Product</h3>
+      <button class="modal-close" onclick="closeProductModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field"><label>Product Name *</label><input type="text" id="mp-name" class="saba-input" placeholder="e.g. Wall Mixer Chrome"></div>
+      <div class="modal-field"><label>Category</label><input type="text" id="mp-category" class="saba-input" placeholder="e.g. Faucets"></div>
+      <div class="modal-field"><label>SKU / Model No.</label><input type="text" id="mp-sku" class="saba-input" placeholder="e.g. NM-WM-001"></div>
+      <div class="modal-field-row">
+        <div class="modal-field"><label>MRP</label><input type="text" id="mp-mrp" class="saba-input" placeholder="MRP Rs. 000/-"></div>
+        <div class="modal-field"><label>Dealer Price</label><input type="text" id="mp-dealer" class="saba-input" placeholder="Rs. 000/-"></div>
+      </div>
+      <div class="modal-field"><label>Packing Info</label><input type="text" id="mp-packing" class="saba-input" placeholder="e.g. Packing – 12 pcs"></div>
+      <div class="modal-field"><label>Technical Specs</label><textarea id="mp-specs" class="saba-input" rows="2" placeholder="Size: 15mm, Flow: 360° etc."></textarea></div>
+      <div class="modal-field"><label>Product Image</label><button class="saba-btn" onclick="pickModalProductImg()" style="width:100%;">📷 Upload Image</button><img id="mp-img-preview" style="max-width:100%;max-height:80px;margin-top:6px;display:none;border-radius:6px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="saba-btn" onclick="saveProductToDB()">✅ Add to Database</button>
+      <button class="saba-btn" style="background:#374151;" onclick="closeProductModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
-<!-- ═══════ MAIN LAYOUT ═══════ -->
-<div id="main-layout">
-
-  <!-- ── EDITOR SIDEBAR ── -->
-  <div id="editor-panel">
-
-    <!-- Grid Control -->
-    <div class="ep-card">
-      <div class="ep-title">📦 Products Grid</div>
-      <div class="ep-body">
-        <div class="grid-row">
-          <span class="grid-lbl">Rows</span>
-          <div class="grid-ctrl">
-            <button class="g-btn" onclick="changeGrid('r',-1)">−</button>
-            <span class="g-val" id="rVal">3</span>
-            <button class="g-btn" onclick="changeGrid('r',+1)">+</button>
-          </div>
-        </div>
-        <div class="grid-row">
-          <span class="grid-lbl">Columns</span>
-          <div class="grid-ctrl">
-            <button class="g-btn" onclick="changeGrid('c',-1)">−</button>
-            <span class="g-val" id="cVal">4</span>
-            <button class="g-btn" onclick="changeGrid('c',+1)">+</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Hero Background Settings -->
-    <div class="ep-card" id="hero-bg-card" style="overflow:visible;">
-      <div class="ep-title">🌄 Hero Background</div>
-      <div class="ep-body">
-        <div class="grid-row" style="flex-direction:column;align-items:flex-start;gap:5px;">
-          <div style="display:flex;justify-content:space-between;width:100%;">
-            <span class="grid-lbl">BG Opacity</span>
-            <span class="pp-range-val" id="heroBgOpacityVal" style="color:#60a5fa;font-weight:700;font-size:12px;">100%</span>
-          </div>
-          <input type="range" class="pp-range" id="heroBgOpacity"
-            min="0" max="100" value="100" style="width:100%;"
-            oninput="setHeroBgOpacity(this.value)">
-        </div>
-        <div class="grid-row" style="margin-top:8px;">
-          <span class="grid-lbl">Dark Overlay</span>
-          <div style="display:flex;gap:5px;">
-            <button class="pp-btn" onclick="toggleHeroOverlay(false)" id="ovrOff">Off</button>
-            <button class="pp-btn" onclick="toggleHeroOverlay(true)"  id="ovrOn">On</button>
-          </div>
-        </div>
-        <div class="grid-row" style="margin-top:6px;">
-          <span class="grid-lbl">Change BG</span>
-          <button class="pp-btn" onclick="pickHeroImg()">📷 Upload</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Add Shapes -->
-    <div class="ep-card">
-      <div class="ep-title">➕ Add to Hero</div>
-      <div class="ep-body">
-        <div class="shapes-grid">
-          <button class="shape-btn" onclick="addShape('rect')">
-            <span class="s-ico">⬜</span><span class="s-lbl">Rectangle</span>
-          </button>
-          <button class="shape-btn" onclick="addShape('circle')">
-            <span class="s-ico">⭕</span><span class="s-lbl">Circle</span>
-          </button>
-          <button class="shape-btn" onclick="addShape('triangle')">
-            <span class="s-ico">🔺</span><span class="s-lbl">Triangle</span>
-          </button>
-          <button class="shape-btn" onclick="addShape('text')">
-            <span class="s-ico">🔤</span><span class="s-lbl">Text</span>
-          </button>
-          <button class="shape-btn" onclick="addShape('badge')">
-            <span class="s-ico">🏅</span><span class="s-lbl">Badge</span>
-          </button>
-          <button class="shape-btn" onclick="addShape('imgbox')">
-            <span class="s-ico">📷</span><span class="s-lbl">Image</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Layers -->
-    <div class="ep-card">
-      <div class="ep-title">🗂️ Layers</div>
-      <div class="ep-body" style="padding:8px;">
-        <div id="layersList"></div>
-      </div>
-    </div>
-
-    <!-- Product Card Style -->
-    <div class="ep-card">
-      <div class="ep-title">📋 Product Card Style</div>
-      <div class="ep-body" style="padding:8px;max-height:320px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(96,165,250,.4) transparent;">
-
-        <div class="pp-group">
-          <div class="pp-group-title">🔤 Product Name</div>
-          <div class="pp-row">
-            <span class="pp-label">Color</span>
-            <input class="pp-color" type="color" value="#1a2340" id="pn-color"
-              oninput="setProdStyle('prod-name','color',this.value)">
-          </div>
-          <div class="pp-row">
-            <span class="pp-label">Font Size</span>
-            <input class="pp-input" type="number" value="9" min="6" max="24" id="pn-size"
-              oninput="setProdStyle('prod-name','fontSize',this.value+'px')">
-          </div>
-          <div class="pp-row">
-            <span class="pp-label">Weight</span>
-            <select class="pp-select" id="pn-weight"
-              onchange="setProdStyle('prod-name','fontWeight',this.value)">
-              <option value="400">Regular</option>
-              <option value="600">Semi-Bold</option>
-              <option value="700" selected>Bold</option>
-              <option value="800">Extra Bold</option>
-              <option value="900">Black</option>
-            </select>
-          </div>
-          <div class="pp-row">
-            <span class="pp-label">Style</span>
-            <div style="display:flex;gap:4px;">
-              <button class="pp-btn" onclick="setProdStyle('prod-name','fontStyle','normal')">Normal</button>
-              <button class="pp-btn" onclick="setProdStyle('prod-name','fontStyle','italic')">Italic</button>
-            </div>
-          </div>
-          <div class="pp-row">
-            <span class="pp-label">Align</span>
-            <div style="display:flex;gap:4px;">
-              <button class="pp-btn" onclick="setProdStyle('prod-name','textAlign','left')">L</button>
-              <button class="pp-btn" onclick="setProdStyle('prod-name','textAlign','center')">C</button>
-              <button class="pp-btn" onclick="setProdStyle('prod-name','textAlign','right')">R</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="pp-group">
-          <div class="pp-group-title">💰 MRP Price</div>
-          <div class="pp-row">
-            <span class="pp-label">Color</span>
-            <input class="pp-color" type="color" value="#0055a0" id="mrp-color"
-              oninput="setProdStyle('prod-mrp','color',this.value)">
-          </div>
-          <div class="pp-row">
-            <span class="pp-label">Font Size</span>
-            <input class="pp-input" type="number" value="10" min="6" max="26" id="mrp-size"
-              oninput="setProdStyle('prod-mrp','fontSize',this.value+'px')">
-          </div>
-          <div class="pp-row">
-            <span class="pp-label">Weight</span>
-            <select class="pp-select" id="mrp-weight"
-              onchange="setProdStyle('prod-mrp','fontWeight',this.value)">
-              <option value="600">Semi-Bold</option>
-              <option value="700">Bold</option>
-              <option value="800" selected>Extra Bold</option>
-              <option value="900">Black</option>
-            </select>
-          </div>
-          <div class="pp-row">
-            <span class="pp-label">Style</span>
-            <div style="display:flex;gap:4px;">
-              <button class="pp-btn" onclick="setProdStyle('prod-mrp','fontStyle','normal')">Normal</button>
-              <button class="pp-btn" onclick="setProdStyle('prod-mrp','fontStyle','italic')">Italic</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="pp-group">
-          <div class="pp-group-title">📦 Packing Text</div>
-          <div class="pp-row">
-            <span class="pp-label">Color</span>
-            <input class="pp-color" type="color" value="#7a8ea8" id="pk-color"
-              oninput="setProdStyle('prod-packing','color',this.value)">
-          </div>
-          <div class="pp-row">
-            <span class="pp-label">Font Size</span>
-            <input class="pp-input" type="number" value="8" min="6" max="20" id="pk-size"
-              oninput="setProdStyle('prod-packing','fontSize',this.value+'px')">
-          </div>
-          <div class="pp-row">
-            <span class="pp-label">Weight</span>
-            <select class="pp-select" id="pk-weight"
-              onchange="setProdStyle('prod-packing','fontWeight',this.value)">
-              <option value="400">Regular</option>
-              <option value="600" selected>Semi-Bold</option>
-              <option value="700">Bold</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="pp-group">
-          <div class="pp-group-title">🃏 Card Appearance</div>
-          <div class="pp-row">
-            <span class="pp-label">Background</span>
-            <input class="pp-color" type="color" value="#fdfdff" id="card-bg"
-              oninput="setProdStyle('product-card','background',this.value)">
-          </div>
-          <div class="pp-row">
-            <span class="pp-label">Border</span>
-            <input class="pp-color" type="color" value="#e8edf2" id="card-border"
-              oninput="setProdStyle('product-card','borderColor',this.value)">
-          </div>
-          <div class="pp-row">
-            <span class="pp-label">Radius</span>
-            <input class="pp-input" type="number" value="9" min="0" max="30" id="card-radius"
-              oninput="setProdStyle('product-card','borderRadius',this.value+'px')">
-          </div>
-        </div>
-
-        <div class="pp-group">
-          <div class="pp-group-title">🅏 Section Title</div>
-          <div class="pp-row">
-            <span class="pp-label">Color</span>
-            <input class="pp-color" type="color" value="#0055a0" id="sec-color"
-              oninput="setProdStyle('psh-title','color',this.value)">
-          </div>
-          <div class="pp-row">
-            <span class="pp-label">Font Size</span>
-            <input class="pp-input" type="number" value="10" min="7" max="22" id="sec-size"
-              oninput="setProdStyle('psh-title','fontSize',this.value+'px')">
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- Properties Panel -->
-    <div class="ep-card" id="prop-card" style="display:none;">
-      <div class="ep-title">⚙️ Properties</div>
-      <div class="ep-body" id="prop-panel-body" style="padding:8px;">
-        <div class="pp-empty">Select an element to edit its properties</div>
-      </div>
-    </div>
-
-  </div>
-  <!-- END SIDEBAR -->
-
-  <!-- ── CATALOGUE ── -->
-  <div id="catalogue-stage">
-  <div id="catalogue">
-
-    <!-- ━━━ HERO ━━━ -->
-    <div class="hero" id="hero">
-
-      <div id="heroBgWrap"></div>
-      <div id="heroOverlay"></div>
-      <!-- hero-glow removed -->
-
-      <!-- Upload placeholder -->
-      <div id="heroPh" onclick="pickHeroImg()">
-        <span class="ph-ico">📷</span>
-        <span class="ph-txt">Click to Upload Hero Background Image</span>
-        <span class="ph-sub">Image will fill the entire dark background</span>
-      </div>
-
-      <!-- Change btn -->
-      <button id="heroChangBtn" onclick="pickHeroImg()">📷 Change Image</button>
-
-      <!-- ── DRAGGABLE ELEMENTS ── -->
-
-      <!-- Series -->
-      <div class="hero-el" id="el-series" data-name="Series Name" data-type="series" style="left:22px;top:18px;">
-        <div class="el-handle">⠿</div>
-        <button class="el-del" onclick="deleteEl('el-series')">×</button>
-        <div>
-          <div class="series-name" contenteditable="false">CRYSTA</div>
-          <div class="series-sub"  contenteditable="false">SERIES</div>
-        </div>
-      </div>
-
-      <!-- Brand Box -->
-      <div class="hero-el" id="el-brand" data-name="Brand Box" data-type="brand" style="right:22px;top:18px;">
-        <div class="el-handle">⠿</div>
-        <button class="el-del" onclick="deleteEl('el-brand')">×</button>
-        <div class="brand-box">
-          <div class="bname" contenteditable="false">NIRMAL DHARA</div>
-          <div class="btag"  contenteditable="false">A Legacy of Trust and Quality</div>
-        </div>
-      </div>
-
-      <!-- Warranty -->
-      <div class="hero-el" id="el-warranty" data-name="Warranty Badge" data-type="warranty" style="left:22px;top:88px;">
-        <div class="el-handle">⠿</div>
-        <button class="el-del" onclick="deleteEl('el-warranty')">×</button>
-        <div class="warranty-badge">
-          <span class="w-num"  contenteditable="false">36</span>
-          <span class="w-text" contenteditable="false">MONTHS<br>WARRANTY</span>
-        </div>
-      </div>
-
-      <!-- Features -->
-      <div class="hero-el" id="el-features" data-name="Features List" data-type="features" style="left:22px;top:185px;">
-        <div class="el-handle">⠿</div>
-        <button class="el-del" onclick="deleteEl('el-features')">×</button>
-        <div class="features-list">
-          <div class="feat-item"><div class="feat-dot">✓</div><div class="feat-text" contenteditable="false">ISI Marked</div></div>
-          <div class="feat-item"><div class="feat-dot">✓</div><div class="feat-text" contenteditable="false">Quality with Longevity</div></div>
-          <div class="feat-item"><div class="feat-dot">✓</div><div class="feat-text" contenteditable="false">Exceptional Quality</div></div>
-          <div class="feat-item"><div class="feat-dot">✓</div><div class="feat-text" contenteditable="false">Teflon Available</div></div>
-          <div class="feat-item"><div class="feat-dot">✓</div><div class="feat-text" contenteditable="false">Chrome &amp; White Available</div></div>
-        </div>
-      </div>
-
-      <!-- Specs Card -->
-      <div class="hero-el" id="el-specs" data-name="Specs Card" data-type="specs" style="left:22px;top:348px;">
-        <div class="el-handle">⠿</div>
-        <button class="el-del" onclick="deleteEl('el-specs')">×</button>
-        <div class="specs-card">
-          <div class="spec-row"><span class="spec-lbl" contenteditable="false">Tap Size:</span><span contenteditable="false">15mm</span></div>
-          <div class="spec-row"><span class="spec-lbl" contenteditable="false">Flow:</span><span contenteditable="false">Honeycomb Foam Flow</span></div>
-          <div class="spec-row"><span class="spec-lbl" contenteditable="false">Turn:</span><span contenteditable="false">360° Full Turn</span></div>
-        </div>
-      </div>
-
-      <!-- 360 badge -->
-      <div class="hero-el" id="el-360" data-name="360° Badge" data-type="badge360" style="right:22px;top:105px;">
-        <div class="el-handle">⠿</div>
-        <button class="el-del" onclick="deleteEl('el-360')">×</button>
-        <div class="badge-360">
-          <div class="b360-num"  contenteditable="false">360°</div>
-          <div class="b360-text" contenteditable="false">Full Turn</div>
-        </div>
-      </div>
-
-      <!-- Bottom label -->
-      <div class="hero-el" id="el-btmlbl" data-name="Bottom Label" data-type="bottomlbl" style="left:220px;top:410px;">
-        <div class="el-handle">⠿</div>
-        <button class="el-del" onclick="deleteEl('el-btmlbl')">×</button>
-        <div class="hero-btm-label" contenteditable="false">★ Honeycomb Foam Flow Technology ★</div>
-      </div>
-
-      <!-- Product Info -->
-      <div class="hero-el" id="el-prodinfo" data-name="Product Info" data-type="prodinfo" style="right:22px;top:320px;text-align:right;">
-        <div class="el-handle">⠿</div>
-        <button class="el-del" onclick="deleteEl('el-prodinfo')">×</button>
-        <div class="hero-prod-name"   contenteditable="false">Wall Mixer</div>
-        <div class="hero-prod-detail" contenteditable="false">M.Box – 12 pcs</div>
-        <div class="hero-prod-mrp"    contenteditable="false">MRP Rs. 3270/-</div>
-      </div>
-
-    </div>
-    <!-- END HERO -->
-
-    <!-- ━━━ PRODUCTS ━━━ -->
-    <div class="products-section">
-      <div class="prod-section-hdr">
-        <div class="psh-line"></div>
-        <div class="psh-title" contenteditable="false">Our Products</div>
-        <div class="psh-liner"></div>
-      </div>
-      <div class="products-grid" id="productsGrid"></div>
-    </div>
-
-  </div>
-  <!-- END CATALOGUE -->
-  </div>
-  <!-- END CATALOGUE STAGE -->
-
-</div>
-
-<script>
-/* ════════════════════════════════════════════════════
-   STATE
-════════════════════════════════════════════════════ */
-let gRows=3, gCols=4, editMode=false, shapeN=0;
-let dragEl=null, dragOffX=0, dragOffY=0, dragPointerId=null;
-
-const PRODS = [
-  {name:"Short Body with Flange",       mrp:"MRP Rs. 223/-", packing:"Packing – 28 pcs"},
-  {name:"Long Body with Flange",        mrp:"MRP Rs. 210/-", packing:"Packing – 18 pcs"},
-  {name:"Machine Cock with Flange",     mrp:"MRP Rs. 315/-", packing:"Packing – 26 pcs"},
-  {name:"Angle Cock with Flange",       mrp:"MRP Rs. 223/-", packing:"Packing – 40 pcs"},
-  {name:"Garden Cock with Flange",      mrp:"MRP Rs. 291/-", packing:"Packing – 26 pcs"},
-  {name:"Pillar Cock with Flange",      mrp:"MRP Rs. 451/-", packing:"Packing – 16 pcs"},
-  {name:"2 Way Bib Cock With Flange",   mrp:"MRP Rs. 432/-", packing:"Packing – 36 pcs"},
-  {name:"2 Way Angle Cock with Flange", mrp:"MRP Rs. 425/-", packing:"Packing – 17 pcs"},
-  {name:"Pillar Sink Cock (Short)",     mrp:"MRP Rs. 590/-", packing:"Packing – 12 pcs"},
-  {name:"Pillar Sink Cock (Long)",      mrp:"MRP Rs. 704/-", packing:"Packing –  9 pcs"},
-  {name:"Wall Sink Cock (Short) Flange",mrp:"MRP Rs. 506/-", packing:"Packing – 12 pcs"},
-  {name:"Wall Sink Cock (Long) Flange", mrp:"MRP Rs. 415/-", packing:"Packing –  9 pcs"},
-];
-
-/* ════════════════════════════════════════════════════
-   BUILD GRID
-════════════════════════════════════════════════════ */
-function buildGrid() {
-  const grid = document.getElementById('productsGrid');
-  grid.style.gridTemplateColumns = `repeat(${gCols},1fr)`;
-  const total = gRows * gCols;
-
-  // Preserve existing data
-  const saved = [];
-  grid.querySelectorAll('.product-card').forEach((card, i) => {
-    saved[i] = {
-      name:    card.querySelector('.prod-name')?.textContent    || '',
-      mrp:     card.querySelector('.prod-mrp')?.textContent     || '',
-      packing: card.querySelector('.prod-packing')?.textContent || '',
-      img:     card.querySelector('img')?.src || '',
-    };
-  });
-
-  grid.innerHTML = '';
-
-  for (let i=0; i<total; i++) {
-    const d = PRODS[i] || {name:`Product ${i+1}`, mrp:'MRP Rs. 000/-', packing:'Packing – 0 pcs'};
-    const s = saved[i] || {};
-    const name    = s.name    || d.name;
-    const mrp     = s.mrp     || d.mrp;
-    const packing = s.packing || d.packing;
-    const img     = s.img     || '';
-
-    const card = document.createElement('div');
-    card.className = 'product-card';
-    card.innerHTML = `
-      <div class="prod-img-box" onclick="pickProdImg(${i})">
-        <img id="pimg${i}" src="${img}" alt="" style="display:${img?'block':'none'}">
-        <div class="prod-img-ph" id="pph${i}" style="display:${img?'none':''}">
-          <span class="ps">+</span><span>Image</span>
-        </div>
-      </div>
-      <div class="prod-name"    contenteditable="${editMode?'true':'false'}">${name}</div>
-      <div class="prod-mrp"     contenteditable="${editMode?'true':'false'}">${mrp}</div>
-      <div class="prod-packing" contenteditable="${editMode?'true':'false'}">${packing}</div>
-    `;
-    grid.appendChild(card);
-  }
-
-  document.getElementById('rVal').textContent = gRows;
-  document.getElementById('cVal').textContent = gCols;
-  requestAnimationFrame(fitGrid); // recalculate row heights
-}
-
-/* ════════════════════════════════════════════════════
-   GRID CONTROL
-════════════════════════════════════════════════════ */
-function changeGrid(axis, delta) {
-  if (axis==='r') gRows = Math.max(1, Math.min(10, gRows+delta));
-  else            gCols = Math.max(1, Math.min(6,  gCols+delta));
-  buildGrid();
-  requestAnimationFrame(fitGrid);
-}
-
-/* ════════════════════════════════════════════════════
-   DRAG & DROP
-════════════════════════════════════════════════════ */
-function initDrag() {
-  document.addEventListener('pointerdown', e => {
-    if (!editMode) return;
-    const el = e.target.closest('.hero-el');
-    if (!el) return;
-    if (e.target.closest('.el-del'))                  return;
-    if (e.target.closest('[contenteditable="true"]')) return;
-
-    e.preventDefault();
-    dragEl = el;
-    dragPointerId = e.pointerId;
-    dragEl.setPointerCapture?.(e.pointerId);
-    dragEl.classList.add('dragging');
-
-    const hero     = document.getElementById('hero');
-    const heroRect = hero.getBoundingClientRect();
-    const elRect   = el.getBoundingClientRect();
-    const scale    = getCatalogueScale();
-
-    // Convert right/bottom to left/top
-    el.style.right     = 'auto';
-    el.style.bottom    = 'auto';
-    el.style.transform = 'none';
-    el.style.left = ((elRect.left - heroRect.left) / scale) + 'px';
-    el.style.top  = ((elRect.top  - heroRect.top) / scale)  + 'px';
-
-    dragOffX = (e.clientX - elRect.left) / scale;
-    dragOffY = (e.clientY - elRect.top) / scale;
-
-    activateEl(el.id);
-  });
-
-  document.addEventListener('pointermove', e => {
-    if (!dragEl) return;
-    if (dragPointerId !== null && e.pointerId !== dragPointerId) return;
-    const hero     = document.getElementById('hero');
-    const heroRect = hero.getBoundingClientRect();
-    const scale = getCatalogueScale();
-    let nl = (e.clientX - heroRect.left) / scale - dragOffX;
-    let nt = (e.clientY - heroRect.top) / scale - dragOffY;
-    nl = Math.max(-15, Math.min(794 - 10, nl));
-    nt = Math.max(-15, Math.min(430 - 10, nt));
-    dragEl.style.left = nl + 'px';
-    dragEl.style.top  = nt + 'px';
-  });
-
-  document.addEventListener('pointerup', endDrag);
-  document.addEventListener('pointercancel', endDrag);
-
-  function endDrag(e) {
-    if (!dragEl) return;
-    if (dragPointerId !== null && e.pointerId !== dragPointerId) return;
-    dragEl.releasePointerCapture?.(dragPointerId);
-    dragEl.classList.remove('dragging');
-    dragEl=null;
-    dragPointerId=null;
-  }
-
-  document.addEventListener('touchmove', e => {
-    if (dragEl) e.preventDefault();
-  }, { passive:false });
-
-  // Click outside deselects
-  document.addEventListener('click', e => {
-    if (!editMode) return;
-    if (!e.target.closest('.hero-el') && !e.target.closest('#editor-panel')) {
-      document.querySelectorAll('.hero-el.active-el').forEach(el => el.classList.remove('active-el'));
-      updateLayers();
-    }
-  });
-}
-
-function getCatalogueScale() {
-  const raw = getComputedStyle(document.documentElement).getPropertyValue('--catalogue-scale');
-  const scale = parseFloat(raw);
-  return Number.isFinite(scale) && scale > 0 ? scale : 1;
-}
-
-/* ════════════════════════════════════════════════════
-   SELECTION
-════════════════════════════════════════════════════ */
-function activateEl(id) {
-  document.querySelectorAll('.hero-el.active-el').forEach(el => el.classList.remove('active-el'));
-  const el = document.getElementById(id);
-  if (el) el.classList.add('active-el');
-  updateLayers();
-  showProperties(id);
-}
-
-/* ════════════════════════════════════════════════════
-   PROPERTY PANEL — helpers
-════════════════════════════════════════════════════ */
-function ppSS(id, prop, val) { // set style on wrapper
-  const el = document.getElementById(id); if (el) el.style[prop] = val;
-}
-function ppIS(id, sel, prop, val) { // set style on inner element
-  const el = document.getElementById(id); if (!el) return;
-  const inn = el.querySelector(sel); if (inn) inn.style[prop] = val;
-}
-function ppAS(id, sel, prop, val) { // set style on all matching inner
-  const el = document.getElementById(id); if (!el) return;
-  el.querySelectorAll(sel).forEach(e => e.style[prop] = val);
-}
-function ppIT(id, sel, val) { // set textContent on inner
-  const el = document.getElementById(id); if (!el) return;
-  const inn = el.querySelector(sel); if (inn) inn.textContent = val;
-}
-function ppRow(label, control) {
-  return `<div class="pp-row"><span class="pp-label">${label}</span>${control}</div>`;
-}
-function ppInput(val, onchange, type='text') {
-  return `<input class="pp-input" type="${type}" value="${val}" onchange="${onchange}">`;
-}
-function ppColor(val, onchange) {
-  return `<input class="pp-color" type="color" value="${val||'#ffffff'}" oninput="${onchange}">`;
-}
-function ppSelect(options, selected, onchange) {
-  return `<select class="pp-select" onchange="${onchange}">${options.map(o=>`<option value="${o.v}" ${o.v==selected?'selected':''}>${o.l}</option>`).join('')}</select>`;
-}
-function commonProps(id, el) {
-  const x = Math.round(parseFloat(el.style.left)||0);
-  const y = Math.round(parseFloat(el.style.top)||0);
-  const op = Math.round(parseFloat(el.style.opacity||1)*100);
-  return `<div class="pp-group">
-    <div class="pp-group-title">📍 Position &amp; Visibility</div>
-    ${ppRow('X (px)', ppInput(x,`ppSS('${id}','left',this.value+'px')`,'number'))}
-    ${ppRow('Y (px)', ppInput(y,`ppSS('${id}','top',this.value+'px')`,'number'))}
-    ${ppRow('Opacity %', ppInput(op,`ppSS('${id}','opacity',this.value/100)`,'number'))}
-  </div>`;
-}
-
-/* ════════════════════════════════════════════════════
-   PROPERTY PANEL — type builders
-════════════════════════════════════════════════════ */
-function ppBuildSeries(id, el) {
-  const name = el.querySelector('.series-name');
-  const sub  = el.querySelector('.series-sub');
-  const fz   = parseFloat(name?.style.fontSize) || 46;
-  const sfz  = parseFloat(sub?.style.fontSize)  || 13;
-  const col  = name?.style.color || 'white';
-  return `<div class="pp-group">
-    <div class="pp-group-title">🔤 Series Name</div>
-    ${ppRow('Font Size', ppInput(fz,`ppIS('${id}','.series-name','fontSize',this.value+'px')`,'number'))}
-    ${ppRow('Color', ppColor(col,`ppIS('${id}','.series-name','color',this.value)`))}
-  </div>
-  <div class="pp-group">
-    <div class="pp-group-title">🔤 Series Subtitle</div>
-    ${ppRow('Font Size', ppInput(sfz,`ppIS('${id}','.series-sub','fontSize',this.value+'px')`,'number'))}
-    ${ppRow('Color', ppColor(sub?.style.color||'rgba(255,255,255,0.65)',`ppIS('${id}','.series-sub','color',this.value)`))}
-    ${ppRow('Letter Spacing', ppInput(parseFloat(sub?.style.letterSpacing)||7,`ppIS('${id}','.series-sub','letterSpacing',this.value+'px')`,'number'))}
-  </div>`;
-}
-
-function ppBuildBrand(id, el) {
-  const box  = el.querySelector('.brand-box');
-  const bg   = box?.style.backgroundColor || '#ffffff';
-  const brad = parseFloat(box?.style.borderRadius) || 10;
-  const nfz  = parseFloat(el.querySelector('.bname')?.style.fontSize) || 17;
-  const tfz  = parseFloat(el.querySelector('.btag')?.style.fontSize)  || 8;
-  return `<div class="pp-group">
-    <div class="pp-group-title">📦 Box Style</div>
-    ${ppRow('Background', ppColor(bg,`ppIS('${id}','.brand-box','backgroundColor',this.value)`))}
-    ${ppRow('Border Radius', ppInput(brad,`ppIS('${id}','.brand-box','borderRadius',this.value+'px')`,'number'))}
-  </div>
-  <div class="pp-group">
-    <div class="pp-group-title">🔤 Brand Name</div>
-    ${ppRow('Font Size', ppInput(nfz,`ppIS('${id}','.bname','fontSize',this.value+'px')`,'number'))}
-    ${ppRow('Color', ppColor(el.querySelector('.bname')?.style.color||'#0055a0',`ppIS('${id}','.bname','color',this.value)`))}
-  </div>
-  <div class="pp-group">
-    <div class="pp-group-title">🔤 Tagline</div>
-    ${ppRow('Font Size', ppInput(tfz,`ppIS('${id}','.btag','fontSize',this.value+'px')`,'number'))}
-    ${ppRow('Color', ppColor(el.querySelector('.btag')?.style.color||'#666666',`ppIS('${id}','.btag','color',this.value)`))}
-  </div>`;
-}
-
-function ppBuildWarranty(id, el) {
-  const badge = el.querySelector('.warranty-badge');
-  const w = parseFloat(badge?.style.width)  || 82;
-  const h = parseFloat(badge?.style.height) || 82;
-  const nfz = parseFloat(el.querySelector('.w-num')?.style.fontSize)  || 24;
-  const tfz = parseFloat(el.querySelector('.w-text')?.style.fontSize) || 7.5;
-  return `<div class="pp-group">
-    <div class="pp-group-title">🔴 Badge Size</div>
-    ${ppRow('Width (px)', ppInput(w,`ppIS('${id}','.warranty-badge','width',this.value+'px');ppIS('${id}','.warranty-badge','height',this.value+'px')`,'number'))}
-  </div>
-  <div class="pp-group">
-    <div class="pp-group-title">🔢 Number</div>
-    ${ppRow('Font Size', ppInput(nfz,`ppIS('${id}','.w-num','fontSize',this.value+'px')`,'number'))}
-    ${ppRow('Color', ppColor(el.querySelector('.w-num')?.style.color||'#ffffff',`ppIS('${id}','.w-num','color',this.value)`))}
-  </div>
-  <div class="pp-group">
-    <div class="pp-group-title">🔤 Label Text</div>
-    ${ppRow('Font Size', ppInput(tfz,`ppIS('${id}','.w-text','fontSize',this.value+'px')`,'number'))}
-    ${ppRow('Color', ppColor(el.querySelector('.w-text')?.style.color||'#ffffff',`ppIS('${id}','.w-text','color',this.value)`))}
-  </div>`;
-}
-
-function ppBuildFeatures(id, el) {
-  const items = el.querySelectorAll('.feat-item');
-  let rows = '';
-  items.forEach((item, i) => {
-    const txt = item.querySelector('.feat-text')?.textContent || '';
-    rows += `<div class="pp-sub-item">
-      <span class="pp-sub-lbl">#${i+1}</span>
-      <input value="${txt.replace(/"/g,'&quot;')}" 
-        onchange="ppFeatureText('${id}',${i},this.value)">
-      <button class="pp-sub-del" onclick="ppDelFeature('${id}',${i})">×</button>
-    </div>`;
-  });
-  const dotColor = el.querySelector('.feat-dot')?.style.color || '#7fde97';
-  const textColor = el.querySelector('.feat-text')?.style.color || 'rgba(255,255,255,0.88)';
-  const fz = parseFloat(el.querySelector('.feat-text')?.style.fontSize) || 9.5;
-  return `<div class="pp-group">
-    <div class="pp-group-title">✅ Feature Items</div>
-    <div id="pp-feats-${id}">${rows}</div>
-    <button class="pp-btn pp-btn-add" onclick="ppAddFeature('${id}')">＋ Add Feature</button>
-  </div>
-  <div class="pp-group">
-    <div class="pp-group-title">🎨 Style</div>
-    ${ppRow('Dot Color', ppColor(dotColor,`ppAS('${id}','.feat-dot','color',this.value)`))}
-    ${ppRow('Text Color', ppColor(textColor,`ppAS('${id}','.feat-text','color',this.value)`))}
-    ${ppRow('Font Size', ppInput(fz,`ppAS('${id}','.feat-text','fontSize',this.value+'px')`,'number'))}
-  </div>`;
-}
-
-function ppBuildSpecs(id, el) {
-  const rows = el.querySelectorAll('.spec-row');
-  let html = '';
-  rows.forEach((row, i) => {
-    const lbl = row.querySelector('.spec-lbl')?.textContent || '';
-    const val = row.querySelectorAll('span')[1]?.textContent || '';
-    html += `<div class="pp-sub-item">
-      <input style="width:42px;flex:none" value="${lbl.replace(/"/g,'&quot;')}" 
-        onchange="ppSpecLabel('${id}',${i},this.value)" placeholder="Label">
-      <input value="${val.replace(/"/g,'&quot;')}"
-        onchange="ppSpecValue('${id}',${i},this.value)" placeholder="Value">
-      <button class="pp-sub-del" onclick="ppDelSpec('${id}',${i})">×</button>
-    </div>`;
-  });
-  const lblColor = el.querySelector('.spec-lbl')?.style.color || '#7fdecc';
-  return `<div class="pp-group">
-    <div class="pp-group-title">📋 Spec Rows</div>
-    <div id="pp-specs-${id}">${html}</div>
-    <button class="pp-btn pp-btn-add" onclick="ppAddSpec('${id}')">＋ Add Spec Row</button>
-  </div>
-  <div class="pp-group">
-    <div class="pp-group-title">🎨 Style</div>
-    ${ppRow('Label Color', ppColor(lblColor,`ppAS('${id}','.spec-lbl','color',this.value)`))}
-    ${ppRow('Value Color', ppColor('#cccccc',`ppAS('${id}','.spec-row span:nth-child(2)','color',this.value)`))}
-  </div>`;
-}
-
-function ppBuildBadge360(id, el) {
-  const badge = el.querySelector('.badge-360');
-  const w = parseFloat(badge?.style.width)  || 68;
-  const nfz = parseFloat(el.querySelector('.b360-num')?.style.fontSize)  || 19;
-  const tfz = parseFloat(el.querySelector('.b360-text')?.style.fontSize) || 7;
-  return `<div class="pp-group">
-    <div class="pp-group-title">⭕ Badge Size</div>
-    ${ppRow('Size (px)', ppInput(w,`ppIS('${id}','.badge-360','width',this.value+'px');ppIS('${id}','.badge-360','height',this.value+'px')`,'number'))}
-    ${ppRow('Border Color', ppColor('#ffffff',`ppIS('${id}','.badge-360','borderColor',this.value)`))}
-  </div>
-  <div class="pp-group">
-    <div class="pp-group-title">🔢 Number</div>
-    ${ppRow('Font Size', ppInput(nfz,`ppIS('${id}','.b360-num','fontSize',this.value+'px')`,'number'))}
-    ${ppRow('Color', ppColor(el.querySelector('.b360-num')?.style.color||'#ffd54f',`ppIS('${id}','.b360-num','color',this.value)`))}
-  </div>
-  <div class="pp-group">
-    <div class="pp-group-title">🔤 Label</div>
-    ${ppRow('Font Size', ppInput(tfz,`ppIS('${id}','.b360-text','fontSize',this.value+'px')`,'number'))}
-    ${ppRow('Color', ppColor(el.querySelector('.b360-text')?.style.color||'rgba(255,255,255,0.75)',`ppIS('${id}','.b360-text','color',this.value)`))}
-  </div>`;
-}
-
-function ppBuildBottomLbl(id, el) {
-  const lbl = el.querySelector('.hero-btm-label');
-  const fz = parseFloat(lbl?.style.fontSize) || 7.5;
-  const ls = parseFloat(lbl?.style.letterSpacing) || 2.5;
-  return `<div class="pp-group">
-    <div class="pp-group-title">🔤 Label Style</div>
-    ${ppRow('Font Size', ppInput(fz,`ppIS('${id}','.hero-btm-label','fontSize',this.value+'px')`,'number'))}
-    ${ppRow('Color', ppColor(lbl?.style.color||'rgba(255,255,255,0.4)',`ppIS('${id}','.hero-btm-label','color',this.value)`))}
-    ${ppRow('Letter Spacing', ppInput(ls,`ppIS('${id}','.hero-btm-label','letterSpacing',this.value+'px')`,'number'))}
-  </div>`;
-}
-
-function ppBuildProdInfo(id, el) {
-  const nfz  = parseFloat(el.querySelector('.hero-prod-name')?.style.fontSize)   || 24;
-  const dfz  = parseFloat(el.querySelector('.hero-prod-detail')?.style.fontSize) || 11;
-  const mfz  = parseFloat(el.querySelector('.hero-prod-mrp')?.style.fontSize)    || 17;
-  return `<div class="pp-group">
-    <div class="pp-group-title">📦 Product Name</div>
-    ${ppRow('Font Size', ppInput(nfz,`ppIS('${id}','.hero-prod-name','fontSize',this.value+'px')`,'number'))}
-    ${ppRow('Color', ppColor(el.querySelector('.hero-prod-name')?.style.color||'#ffffff',`ppIS('${id}','.hero-prod-name','color',this.value)`))}
-  </div>
-  <div class="pp-group">
-    <div class="pp-group-title">📝 Detail Text</div>
-    ${ppRow('Font Size', ppInput(dfz,`ppIS('${id}','.hero-prod-detail','fontSize',this.value+'px')`,'number'))}
-    ${ppRow('Color', ppColor(el.querySelector('.hero-prod-detail')?.style.color||'rgba(255,255,255,0.75)',`ppIS('${id}','.hero-prod-detail','color',this.value)`))}
-  </div>
-  <div class="pp-group">
-    <div class="pp-group-title">💰 MRP Text</div>
-    ${ppRow('Font Size', ppInput(mfz,`ppIS('${id}','.hero-prod-mrp','fontSize',this.value+'px')`,'number'))}
-    ${ppRow('Color', ppColor(el.querySelector('.hero-prod-mrp')?.style.color||'#ffd54f',`ppIS('${id}','.hero-prod-mrp','color',this.value)`))}
-  </div>`;
-}
-
-function ppBuildShape(id, el) {
-  const shape = el.querySelector('.cshape, [style*="border-left"]');
-  const inner = el.querySelector('.shape-inner');
-  const isTri = !!el.querySelector('[style*="border-left"]');
-  const w   = parseFloat(shape?.style.width)        || 110;
-  const h   = parseFloat(shape?.style.height)       || 65;
-  const br  = parseFloat(shape?.style.borderRadius) || 0;
-  const bw  = parseFloat(shape?.style.borderWidth)  || 0;
-  const ifz = parseFloat(inner?.style.fontSize)     || 10;
-  if (isTri) return `<div class="pp-group">
-    <div class="pp-group-title">🔺 Triangle Color</div>
-    ${ppRow('Color', ppColor('#eab308',`ppIS('${id}','[style*=border-left]','borderBottomColor',this.value)`))}
-  </div>`;
-  return `<div class="pp-group">
-    <div class="pp-group-title">📐 Size</div>
-    ${ppRow('Width (px)', ppInput(w,`ppIS('${id}','.cshape','width',this.value+'px')`,'number'))}
-    ${ppRow('Height (px)', ppInput(h,`ppIS('${id}','.cshape','height',this.value+'px')`,'number'))}
-  </div>
-  <div class="pp-group">
-    <div class="pp-group-title">🎨 Appearance</div>
-    ${ppRow('Background', ppColor('#3b82f6',`ppIS('${id}','.cshape','backgroundColor',this.value)`))}
-    ${ppRow('Border Radius', ppInput(br,`ppIS('${id}','.cshape','borderRadius',this.value+'px')`,'number'))}
-    ${ppRow('Border Width', ppInput(bw,`ppIS('${id}','.cshape','borderWidth',this.value+'px')`,'number'))}
-    ${ppRow('Border Color', ppColor('#ffffff',`ppIS('${id}','.cshape','borderColor',this.value)`))}
-  </div>
-  ${inner ? `<div class="pp-group">
-    <div class="pp-group-title">🔤 Inner Text</div>
-    ${ppRow('Font Size', ppInput(ifz,`ppIS('${id}','.shape-inner','fontSize',this.value+'px')`,'number'))}
-    ${ppRow('Color', ppColor(inner.style.color||'#ffffff',`ppIS('${id}','.shape-inner','color',this.value)`))}
-  </div>` : ''}`;
-}
-
-function ppBuildText(id, el) {
-  const txt = el.querySelector('[style*="font-size"], div, span');
-  const fz  = parseFloat(txt?.style.fontSize)  || 18;
-  const fw  = txt?.style.fontWeight || '700';
-  const ls  = parseFloat(txt?.style.letterSpacing) || 0;
-  return `<div class="pp-group">
-    <div class="pp-group-title">🔤 Text Style</div>
-    ${ppRow('Font Size', ppInput(fz,`ppIS('${id}','[contenteditable]','fontSize',this.value+'px')`,'number'))}
-    ${ppRow('Color', ppColor(txt?.style.color||'#ffffff',`ppIS('${id}','[contenteditable]','color',this.value)`))}
-    ${ppRow('Font Weight', ppSelect([{v:'400',l:'Regular'},{v:'600',l:'Semi-Bold'},{v:'700',l:'Bold'},{v:'800',l:'Extra Bold'},{v:'900',l:'Black'}],fw,`ppIS('${id}','[contenteditable]','fontWeight',this.value)`))}
-    ${ppRow('Letter Spacing', ppInput(ls,`ppIS('${id}','[contenteditable]','letterSpacing',this.value+'px')`,'number'))}
-  </div>`;
-}
-
-function ppBuildImgBox(id, el) {
-  const box = el.querySelector('[style*="border-radius"], div:last-child');
-  const w   = parseFloat(box?.style.width)        || 130;
-  const h   = parseFloat(box?.style.height)       || 110;
-  const br  = parseFloat(box?.style.borderRadius) || 10;
-  return `<div class="pp-group">
-    <div class="pp-group-title">📐 Size</div>
-    ${ppRow('Width (px)', ppInput(w,`ppIS('${id}','div:last-child','width',this.value+'px')`,'number'))}
-    ${ppRow('Height (px)', ppInput(h,`ppIS('${id}','div:last-child','height',this.value+'px')`,'number'))}
-    ${ppRow('Border Radius', ppInput(br,`ppIS('${id}','div:last-child','borderRadius',this.value+'px')`,'number'))}
-    ${ppRow('Border Color', ppColor('#ffffff',`ppIS('${id}','div:last-child','borderColor',this.value)`))}
-  </div>`;
-}
-
-/* ════════════════════════════════════════════════════
-   PROPERTY PANEL — main dispatcher
-════════════════════════════════════════════════════ */
-const PP_BUILDERS = {
-  series:   ppBuildSeries,
-  brand:    ppBuildBrand,
-  warranty: ppBuildWarranty,
-  features: ppBuildFeatures,
-  specs:    ppBuildSpecs,
-  badge360: ppBuildBadge360,
-  bottomlbl:ppBuildBottomLbl,
-  prodinfo: ppBuildProdInfo,
-  rect:     ppBuildShape,
-  circle:   ppBuildShape,
-  badge:    ppBuildShape,
-  triangle: ppBuildShape,
-  text:     ppBuildText,
-  imgbox:   ppBuildImgBox,
-};
-
-function showProperties(id) {
-  const el = document.getElementById(id);
-  const panel = document.getElementById('prop-panel-body');
-  const card  = document.getElementById('prop-card');
-  if (!el || !panel || !card) return;
-
-  card.style.display = '';
-  const type = el.dataset.type || 'text';
-  const builder = PP_BUILDERS[type] || (() => '');
-  panel.innerHTML = commonProps(id, el) + builder(id, el);
-}
-
-/* ════════════════════════════════════════════════════
-   PROPERTY PANEL — features list mutations
-════════════════════════════════════════════════════ */
-function ppFeatureText(id, idx, val) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const items = el.querySelectorAll('.feat-text');
-  if (items[idx]) items[idx].textContent = val;
-}
-function ppDelFeature(id, idx) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const items = el.querySelectorAll('.feat-item');
-  if (items[idx]) items[idx].remove();
-  showProperties(id); // refresh panel
-}
-function ppAddFeature(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const list = el.querySelector('.features-list');
-  if (!list) return;
-  const item = document.createElement('div');
-  item.className = 'feat-item';
-  item.innerHTML = `<div class="feat-dot">✓</div><div class="feat-text" contenteditable="${editMode?'true':'false'}">New Feature</div>`;
-  list.appendChild(item);
-  showProperties(id);
-}
-
-/* ════════════════════════════════════════════════════
-   PROPERTY PANEL — specs card mutations
-════════════════════════════════════════════════════ */
-function ppSpecLabel(id, idx, val) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const lbls = el.querySelectorAll('.spec-lbl');
-  if (lbls[idx]) lbls[idx].textContent = val;
-}
-function ppSpecValue(id, idx, val) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const rows = el.querySelectorAll('.spec-row');
-  if (!rows[idx]) return;
-  const spans = rows[idx].querySelectorAll('span');
-  if (spans[1]) spans[1].textContent = val;
-}
-function ppDelSpec(id, idx) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const rows = el.querySelectorAll('.spec-row');
-  if (rows[idx]) rows[idx].remove();
-  showProperties(id);
-}
-function ppAddSpec(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const card = el.querySelector('.specs-card');
-  if (!card) return;
-  const row = document.createElement('div');
-  row.className = 'spec-row';
-  row.innerHTML = `<span class="spec-lbl" contenteditable="${editMode?'true':'false'}">Label:</span><span contenteditable="${editMode?'true':'false'}">Value</span>`;
-  card.appendChild(row);
-  showProperties(id);
-}
-
-/* ════════════════════════════════════════════════════
-   DELETE ELEMENT
-════════════════════════════════════════════════════ */
-function deleteEl(id) {
-  const el = document.getElementById(id);
-  if (el) el.remove();
-  updateLayers();
-  // Clear properties panel
-  const propCard = document.getElementById('prop-card');
-  if (propCard) propCard.style.display = 'none';
-}
-
-/* ════════════════════════════════════════════════════
-   LAYERS PANEL
-════════════════════════════════════════════════════ */
-function updateLayers() {
-  const list = document.getElementById('layersList');
-  const els  = document.querySelectorAll('#hero .hero-el');
-  list.innerHTML = '';
-
-  if (!els.length) {
-    list.innerHTML = '<div style="font-size:10px;color:rgba(255,255,255,.3);text-align:center;padding:8px;">No elements</div>';
-    return;
-  }
-
-  els.forEach(el => {
-    const name   = el.dataset.name || el.id;
-    const hidden = el.style.display === 'none';
-    const active = el.classList.contains('active-el');
-
-    const item = document.createElement('div');
-    item.className = 'layer-item' + (active ? ' selected' : '');
-    item.innerHTML = `
-      <span class="layer-vis" onclick="toggleVis('${el.id}',this)">${hidden?'🙈':'👁️'}</span>
-      <span class="layer-name">${name}</span>
-      <button class="layer-del" onclick="deleteEl('${el.id}')">×</button>
-    `;
-    item.addEventListener('click', e => {
-      if (e.target.closest('.layer-vis') || e.target.closest('.layer-del')) return;
-      activateEl(el.id);
-    });
-    list.appendChild(item);
-  });
-}
-
-function toggleVis(id, btn) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const hidden = el.style.display === 'none';
-  el.style.display = hidden ? '' : 'none';
-  btn.textContent  = hidden ? '👁️' : '🙈';
-}
-
-/* ════════════════════════════════════════════════════
-   ADD SHAPES
-════════════════════════════════════════════════════ */
-function addShape(type) {
-  const hero = document.getElementById('hero');
-  const id   = `el-shape-${++shapeN}`;
-  const wrap = document.createElement('div');
-  wrap.className  = 'hero-el';
-  wrap.id         = id;
-  wrap.style.left = '200px';
-  wrap.style.top  = '160px';
-
-  let name='', inner='';
-
-  if (type==='rect') {
-    name='Rectangle';
-    inner=`<div class="cshape is-rect" style="width:110px;height:65px;background:rgba(59,130,246,.75);border:2px solid rgba(255,255,255,.4);">
-      <div class="shape-inner" contenteditable="false">Text Here</div></div>`;
-  } else if (type==='circle') {
-    name='Circle';
-    inner=`<div class="cshape is-circle" style="width:85px;height:85px;background:rgba(239,68,68,.78);border:2px solid rgba(255,255,255,.4);">
-      <div class="shape-inner" contenteditable="false">Text</div></div>`;
-  } else if (type==='triangle') {
-    name='Triangle';
-    inner=`<div style="width:0;height:0;border-left:48px solid transparent;border-right:48px solid transparent;border-bottom:82px solid rgba(234,179,8,.85);"></div>`;
-  } else if (type==='text') {
-    name='Text Box';
-    inner=`<div style="font-size:18px;font-weight:700;color:white;font-family:'Montserrat',sans-serif;text-shadow:0 2px 8px rgba(0,0,0,.5);white-space:nowrap;" contenteditable="false">New Text</div>`;
-  } else if (type==='badge') {
-    name='Badge';
-    inner=`<div class="cshape is-badge" style="width:82px;height:82px;background:radial-gradient(circle at 38% 38%,#f97316,#c2410c);border:3px solid rgba(255,255,255,.35);box-shadow:0 4px 16px rgba(0,0,0,.35);">
-      <div class="shape-inner" style="font-size:9px;" contenteditable="false">BADGE<br>TEXT</div></div>`;
-  } else if (type==='imgbox') {
-    name='Image Box';
-    const iid=`simg-${shapeN}`;
-    inner=`<div style="width:130px;height:110px;border:2.5px dashed rgba(255,255,255,.38);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(255,255,255,.06);" onclick="pickShapeImg('${iid}',this)">
-      <img id="${iid}" src="" style="display:none;max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;">
-      <span style="color:rgba(255,255,255,.45);font-size:28px;">📷</span></div>`;
-  }
-
-  wrap.dataset.name = name;
-  wrap.dataset.type = type;
-  wrap.innerHTML = `
-    <div class="el-handle">⠿</div>
-    <button class="el-del" onclick="deleteEl('${id}')">×</button>
-    ${inner}
-  `;
-
-  // Apply contenteditable if edit mode
-  if (editMode) wrap.querySelectorAll('[contenteditable]').forEach(e => e.contentEditable='true');
-
-  hero.appendChild(wrap);
-  updateLayers();
-  setTimeout(() => activateEl(id), 30);
-}
-
-function pickShapeImg(imgId, container) {
-  const inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = 'image/*';
-  inp.onchange = e => {
-    const f = e.target.files[0]; if (!f) return;
-    const img = document.getElementById(imgId);
-    const ph  = container.querySelector('span');
-    img.src = URL.createObjectURL(f);
-    img.style.display = 'block';
-    if (ph) ph.style.display = 'none';
-  };
-  inp.click();
-}
-
-/* ════════════════════════════════════════════════════
-   EDIT MODE
-════════════════════════════════════════════════════ */
-function toggleEdit() {
-  editMode = !editMode;
-  document.body.classList.toggle('edit-mode', editMode);
-
-  document.querySelectorAll('[contenteditable]').forEach(el => {
-    el.contentEditable = editMode ? 'true' : 'false';
-  });
-
-  const btn  = document.getElementById('editBtn');
-  const hint = document.getElementById('tb-hint');
-
-  if (editMode) {
-    btn.textContent = '✅ Edit Mode ON'; btn.classList.add('active');
-    hint.textContent = '🖊 Drag elements • Click text to edit • Use sidebar for shapes & grid';
-    hint.style.color = '#86efac';
-    updateLayers();
-  } else {
-    btn.textContent='✏️ Edit Mode'; btn.classList.remove('active');
-    hint.textContent='OFF'; hint.style.color='';
-    document.querySelectorAll('.hero-el.active-el').forEach(el => el.classList.remove('active-el'));
-  }
-}
-
-/* ════════════════════════════════════════════════════
-   PRODUCT CARD STYLE
-════════════════════════════════════════════════════ */
-// Stores all card style overrides so save/load can persist them
-const cardStyles = {};
-
-function setProdStyle(cls, prop, val) {
-  document.querySelectorAll('.' + cls).forEach(el => el.style[prop] = val);
-  // Store for save
-  if (!cardStyles[cls]) cardStyles[cls] = {};
-  cardStyles[cls][prop] = val;
-}
-
-function applyCardStyles(styles) {
-  if (!styles) return;
-  Object.entries(styles).forEach(([cls, props]) => {
-    Object.entries(props).forEach(([prop, val]) => {
-      setProdStyle(cls, prop, val);
-      // Restore sidebar control values
-      const map = {
-        'prod-name':{'color':'pn-color','fontSize':'pn-size','fontWeight':'pn-weight'},
-        'prod-mrp': {'color':'mrp-color','fontSize':'mrp-size','fontWeight':'mrp-weight'},
-        'prod-packing':{'color':'pk-color','fontSize':'pk-size','fontWeight':'pk-weight'},
-        'product-card':{'background':'card-bg','borderColor':'card-border','borderRadius':'card-radius'},
-        'psh-title':{'color':'sec-color','fontSize':'sec-size'},
-      };
-      const ctrlId = map[cls]?.[prop];
-      if (ctrlId) {
-        const ctrl = document.getElementById(ctrlId);
-        if (ctrl) {
-          // fontSize comes back as "12px" — strip px for number inputs
-          ctrl.value = typeof val === 'string' ? val.replace('px','') : val;
-        }
-      }
-    });
-  });
-}
-
-/* ════════════════════════════════════════════════════
-   HERO IMAGE
-════════════════════════════════════════════════════ */
-function pickHeroImg() {
-  const inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = 'image/*';
-  inp.onchange = e => {
-    const f = e.target.files[0]; if (!f) return;
-    const wrap = document.getElementById('heroBgWrap');
-    wrap.style.backgroundImage = `url('${URL.createObjectURL(f)}')`;
-    wrap.style.backgroundSize = 'cover'; wrap.style.backgroundPosition = 'center';
-    document.getElementById('heroPh').style.display = 'none';
-    document.getElementById('heroOverlay').style.display = 'block';
-    // Reset opacity slider to 100%
-    const slider = document.getElementById('heroBgOpacity');
-    const val    = document.getElementById('heroBgOpacityVal');
-    if (slider) slider.value = 100;
-    if (val)    val.textContent = '100%';
-    wrap.style.opacity = '1';
-  };
-  inp.click();
-}
-
-function setHeroBgOpacity(v) {
-  document.getElementById('heroBgWrap').style.opacity = v / 100;
-  const lbl = document.getElementById('heroBgOpacityVal');
-  if (lbl) lbl.textContent = v + '%';
-  // Update slider gradient fill
-  const slider = document.getElementById('heroBgOpacity');
-  if (slider) slider.style.background =
-    `linear-gradient(to right,#3b82f6 ${v}%,rgba(255,255,255,.15) ${v}%)`;
-}
-
-function toggleHeroOverlay(on) {
-  document.getElementById('heroOverlay').style.display = on ? 'block' : 'none';
-  document.getElementById('ovrOn').style.background  = on  ? 'rgba(59,130,246,.35)' : '';
-  document.getElementById('ovrOff').style.background = !on ? 'rgba(59,130,246,.35)' : '';
-}
-
-/* ════════════════════════════════════════════════════
-   PRODUCT IMAGE
-════════════════════════════════════════════════════ */
-function pickProdImg(i) {
-  const inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = 'image/*';
-  inp.onchange = e => {
-    const f = e.target.files[0]; if (!f) return;
-    const img = document.getElementById(`pimg${i}`);
-    const ph  = document.getElementById(`pph${i}`);
-    img.src = URL.createObjectURL(f);
-    img.style.display = 'block';
-    if (ph) ph.style.display = 'none';
-  };
-  inp.click();
-}
-
-/* ════════════════════════════════════════════════════
-   DOWNLOAD
-════════════════════════════════════════════════════ */
-function downloadPDF() {
-  if (editMode) toggleEdit();
-  alert('🖨️ Print Tips:\n\n✅ Destination → Save as PDF\n✅ "Background graphics" checkbox → MUST BE CHECKED\n   (otherwise hero image won\'t print)\n\nClick OK then Save!');
-  setTimeout(()=>window.print(), 300);
-}
-
-/* ════════════════════════════════════════════════════
-   FIT GRID — calculate exact row heights to fill page
-════════════════════════════════════════════════════ */
-function fitGrid() {
-  const grid    = document.getElementById('productsGrid');
-  const section = document.querySelector('.products-section');
-  const hdr     = document.querySelector('.prod-section-hdr');
-  if (!grid || !section || !hdr) return;
-
-  const secH   = section.clientHeight;
-  const hdrH   = hdr.offsetHeight + 11;
-  const padV   = 14 + 12;
-  const gapH   = 9 * (gRows - 1);
-  const availH = secH - hdrH - padV;
-  const rowH   = Math.max(60, Math.floor((availH - gapH) / gRows));
-
-  grid.style.gridTemplateRows = `repeat(${gRows}, ${rowH}px)`;
-
-  /* — Scale card content proportionally —
-     Base reference: 3 rows × 4 cols = rowH ~155px, scale = 1.0
-     When rowH is bigger → scale > 1 (bigger fonts, bigger image area)
-     When rowH is smaller → scale < 1 (smaller fonts) */
-  const BASE_ROW_H = 155;
-  const scale = Math.max(0.65, Math.min(2.0, rowH / BASE_ROW_H));
-  document.documentElement.style.setProperty('--card-scale', scale.toFixed(3));
-}
-
-function updateCatalogueScale() {
-  const maxWidth = 794;
-  const gutter = window.innerWidth <= 830 ? 20 : 32;
-  const available = Math.max(280, window.innerWidth - gutter);
-  const scale = Math.min(1, available / maxWidth);
-  document.documentElement.style.setProperty('--catalogue-scale', scale.toFixed(5));
-}
-
-/* ════════════════════════════════════════════════════
-   TOAST
-════════════════════════════════════════════════════ */
-function showToast(msg, type='success') {
-  const c = document.getElementById('toast-container');
-  const t = document.createElement('div');
-  t.className = 'toast ' + type;
-  t.textContent = msg;
-  c.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
-}
-
-/* ════════════════════════════════════════════════════
-   SAVE TEMPLATE
-════════════════════════════════════════════════════ */
-async function imgToB64(src, maxW, quality) {
-  if (!src || src === '') return null;
-  return new Promise(resolve => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const ratio = Math.min(1, maxW / (img.naturalWidth || maxW));
-      const w = Math.max(1, Math.round((img.naturalWidth || maxW) * ratio));
-      const h = Math.max(1, Math.round((img.naturalHeight || maxW) * ratio));
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', quality));
-    };
-    img.onerror = () => resolve(null);
-    img.src = src;
-  });
-}
-
-async function saveTemplate() {
-  const btn = document.getElementById('saveBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
-
-  try {
-    const data = { v: 3, gRows, gCols, heroEls: [], products: [], productImgs: {} };
-
-    // Hero Background
-    const heroBgWrap = document.getElementById('heroBgWrap');
-    const rawBg = heroBgWrap?.style.backgroundImage || '';
-    const bgSrc = rawBg.replace(/^url\(['"](.*)['"]\)$/, '$1').replace(/^url\((.*)\)$/, '$1');
-    if (bgSrc && bgSrc !== 'none' && bgSrc !== '') {
-      data.heroBgB64    = await imgToB64(bgSrc, 1200, 0.78);
-      data.heroBgSize   = heroBgWrap.style.backgroundSize;
-      data.heroBgPos    = heroBgWrap.style.backgroundPosition;
-      data.heroBgOpacity = parseFloat(heroBgWrap.style.opacity || '1');
-      data.heroOverlay  = document.getElementById('heroOverlay').style.display;
-    }
-
-    // Hero Elements
-    for (const el of document.querySelectorAll('#hero .hero-el')) {
-      let html = el.innerHTML.replace(/src="blob:[^"]*"/g, 'src=""');
-      // Convert imgbox shape image blobs to base64
-      const shapeImg = el.querySelector('img[id^="simg"]');
-      if (shapeImg && shapeImg.src && shapeImg.src.startsWith('blob:')) {
-        const b64 = await imgToB64(shapeImg.src, 600, 0.8);
-        if (b64) html = html.replace(/src=""/, `src="${b64}"`);
-      }
-      data.heroEls.push({
-        id: el.id, name: el.dataset.name, type: el.dataset.type,
-        left: el.style.left, top: el.style.top, right: el.style.right,
-        tAlign: el.style.textAlign, opacity: el.style.opacity, display: el.style.display,
-        html
-      });
-    }
-
-    // Product Card Texts
-    document.querySelectorAll('.product-card').forEach((card, i) => {
-      data.products[i] = {
-        name:    card.querySelector('.prod-name')?.textContent    || '',
-        mrp:     card.querySelector('.prod-mrp')?.textContent     || '',
-        packing: card.querySelector('.prod-packing')?.textContent || ''
-      };
-    });
-
-    // Product Images (compressed)
-    for (let i = 0; i < gRows * gCols; i++) {
-      const img = document.getElementById(`pimg${i}`);
-      if (img && img.src && img.src.startsWith('blob:')) {
-        const b64 = await imgToB64(img.src, 400, 0.78);
-        if (b64) data.productImgs[i] = b64;
-      }
-    }
-
-    // Card Styles
-    data.cardStyles = JSON.parse(JSON.stringify(cardStyles));
-
-    const json = JSON.stringify(data);
-    localStorage.setItem('cc_save_v3', json);
-    const kb = (json.length / 1024).toFixed(0);
-    showToast(`✅ Saved! (${kb} KB used)`);
-  } catch(e) {
-    if (e.name === 'QuotaExceededError') {
-      showToast('⚠️ Storage full! Use fewer/smaller images.', 'error');
-    } else {
-      showToast('⚠️ Save failed: ' + e.message, 'error');
-    }
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '💾 Save'; }
-  }
-}
-
-/* ════════════════════════════════════════════════════
-   LOAD TEMPLATE
-════════════════════════════════════════════════════ */
-function loadTemplate(silent) {
-  const raw = localStorage.getItem('cc_save_v3');
-  if (!raw) {
-    if (!silent) showToast('No saved template found.', 'error');
-    return false;
-  }
-  try {
-    const data = JSON.parse(raw);
-
-    // Restore Grid
-    if (data.gRows) gRows = data.gRows;
-    if (data.gCols) gCols = data.gCols;
-    buildGrid();
-
-    // Restore Product Texts
-    if (data.products && data.products.length) {
-      document.querySelectorAll('.product-card').forEach((card, i) => {
-        if (!data.products[i]) return;
-        const n  = card.querySelector('.prod-name');
-        const m  = card.querySelector('.prod-mrp');
-        const pk = card.querySelector('.prod-packing');
-        if (n)  n.textContent  = data.products[i].name;
-        if (m)  m.textContent  = data.products[i].mrp;
-        if (pk) pk.textContent = data.products[i].packing;
-      });
-    }
-
-    // Restore Product Images
-    if (data.productImgs) {
-      Object.entries(data.productImgs).forEach(([i, src]) => {
-        const img = document.getElementById('pimg' + i);
-        const ph  = document.getElementById('pph' + i);
-        if (img && src) {
-          img.src = src; img.style.display = 'block';
-          if (ph) ph.style.display = 'none';
-        }
-      });
-    }
-
-    // Restore Hero BG
-    if (data.heroBgB64) {
-      const wrap = document.getElementById('heroBgWrap');
-      wrap.style.backgroundImage    = "url('" + data.heroBgB64 + "')";
-      wrap.style.backgroundSize     = data.heroBgSize || 'cover';
-      wrap.style.backgroundPosition = data.heroBgPos  || 'center';
-      // Restore opacity
-      const op = data.heroBgOpacity !== undefined ? data.heroBgOpacity : 1;
-      wrap.style.opacity = op;
-      const slider = document.getElementById('heroBgOpacity');
-      const valLbl = document.getElementById('heroBgOpacityVal');
-      if (slider) { slider.value = Math.round(op * 100); setHeroBgOpacity(Math.round(op * 100)); }
-      if (valLbl) valLbl.textContent = Math.round(op * 100) + '%';
-      document.getElementById('heroPh').style.display      = 'none';
-      document.getElementById('heroOverlay').style.display = data.heroOverlay || 'block';
-    }
-
-    // Restore Hero Elements
-    const hero = document.getElementById('hero');
-    hero.querySelectorAll('.hero-el[id^="el-shape"]').forEach(e => e.remove());
-
-    data.heroEls.forEach(d => {
-      let el = document.getElementById(d.id);
-      const isNew = !el;
-      if (isNew) {
-        el = document.createElement('div');
-        el.className = 'hero-el';
-        el.id = d.id;
-        hero.appendChild(el);
-        const n = parseInt(d.id.replace('el-shape-', ''));
-        if (!isNaN(n) && n > shapeN) shapeN = n;
-      }
-      el.dataset.name = d.name || '';
-      el.dataset.type = d.type || '';
-      if (d.left)    el.style.left      = d.left;
-      if (d.top)     el.style.top       = d.top;
-      if (d.right)   el.style.right     = d.right;
-      if (d.tAlign)  el.style.textAlign = d.tAlign;
-      if (d.opacity) el.style.opacity   = d.opacity;
-      el.style.display = d.display || '';
-      el.innerHTML = d.html;
-      if (isNew && editMode) {
-        el.querySelectorAll('[contenteditable]').forEach(e => e.contentEditable = 'true');
-      }
-    });
-
-    updateLayers();
-    requestAnimationFrame(fitGrid);
-    // Restore card styles
-    if (data.cardStyles) applyCardStyles(data.cardStyles);
-    if (!silent) showToast('📥 Template loaded!');
-    return true;
-  } catch(e) {
-    console.error('Load failed:', e);
-    if (!silent) showToast('⚠️ Load failed: ' + e.message, 'error');
-    return false;
-  }
-}
-
-function loadTemplatePrompt() {
-  if (!localStorage.getItem('cc_save_v3')) {
-    showToast('No saved template found.', 'error');
-    return;
-  }
-  if (confirm('Load saved template? Current unsaved edits will be lost.')) {
-    loadTemplate(false);
-  }
-}
-
-/* ════════════════════════════════════════════════════
-   RESET TEMPLATE
-════════════════════════════════════════════════════ */
-function resetTemplate() {
-  if (!confirm('Reset everything to default?\n\nThis will:\n• Clear all your edits\n• Remove saved design from browser memory\n• Reload the page fresh\n\nThis cannot be undone!')) return;
-  localStorage.removeItem('cc_save_v3');
-  showToast('🔄 Resetting...');
-  setTimeout(() => location.reload(), 600);
-}
-
-/* ════════════════════════════════════════════════════
-   EXPORT DESIGN (download as JSON file)
-════════════════════════════════════════════════════ */
-async function exportDesign() {
-  const btn = document.querySelector('.tb-export');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Exporting...'; }
-  try {
-    // Reuse saveTemplate logic but return data instead of storing
-    const data = { v: 3, gRows, gCols, heroEls: [], products: [], productImgs: {}, exportedAt: new Date().toISOString() };
-
-    // Hero BG
-    const heroBgWrap = document.getElementById('heroBgWrap');
-    const rawBg = heroBgWrap?.style.backgroundImage || '';
-    const bgSrc = rawBg.replace(/^url\(['"](.*)['"]\)$/, '$1').replace(/^url\((.*)\)$/, '$1');
-    if (bgSrc && bgSrc !== 'none' && bgSrc !== '') {
-      data.heroBgB64   = await imgToB64(bgSrc, 1200, 0.78);
-      data.heroBgSize  = heroBgWrap.style.backgroundSize;
-      data.heroBgPos   = heroBgWrap.style.backgroundPosition;
-      data.heroOverlay = document.getElementById('heroOverlay').style.display;
-    }
-
-    // Hero Elements
-    for (const el of document.querySelectorAll('#hero .hero-el')) {
-      let html = el.innerHTML.replace(/src="blob:[^"]*"/g, 'src=""');
-      const shapeImg = el.querySelector('img[id^="simg"]');
-      if (shapeImg && shapeImg.src && shapeImg.src.startsWith('blob:')) {
-        const b64 = await imgToB64(shapeImg.src, 600, 0.8);
-        if (b64) html = html.replace(/src=""/, `src="${b64}"`);
-      }
-      data.heroEls.push({
-        id: el.id, name: el.dataset.name, type: el.dataset.type,
-        left: el.style.left, top: el.style.top, right: el.style.right,
-        tAlign: el.style.textAlign, opacity: el.style.opacity, display: el.style.display,
-        html
-      });
-    }
-
-    // Products
-    document.querySelectorAll('.product-card').forEach((card, i) => {
-      data.products[i] = {
-        name:    card.querySelector('.prod-name')?.textContent    || '',
-        mrp:     card.querySelector('.prod-mrp')?.textContent     || '',
-        packing: card.querySelector('.prod-packing')?.textContent || ''
-      };
-    });
-
-    // Product Images
-    for (let i = 0; i < gRows * gCols; i++) {
-      const img = document.getElementById(`pimg${i}`);
-      if (img && img.src && img.src.startsWith('blob:')) {
-        const b64 = await imgToB64(img.src, 400, 0.78);
-        if (b64) data.productImgs[i] = b64;
-      }
-    }
-
-    // Download as file
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    const date = new Date().toISOString().slice(0,10);
-    a.href     = url;
-    a.download = `catalogue-design-${date}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    const kb = (json.length / 1024).toFixed(0);
-    showToast(`✅ Design exported! (${kb} KB)`);
-  } catch(e) {
-    showToast('⚠️ Export failed: ' + e.message, 'error');
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '⬇️ Export'; }
-  }
-}
-
-/* ════════════════════════════════════════════════════
-   IMPORT DESIGN (load from JSON file)
-════════════════════════════════════════════════════ */
-function importDesign() {
-  const inp = document.createElement('input');
-  inp.type   = 'file';
-  inp.accept = '.json,application/json';
-  inp.onchange = e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!confirm(`Import "${file.name}"?\n\nThis will replace your current design.`)) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      try {
-        const data = JSON.parse(ev.target.result);
-        if (!data.v || !data.heroEls) {
-          showToast('⚠️ Invalid design file!', 'error');
-          return;
-        }
-        // Temporarily store in localStorage and load
-        localStorage.setItem('cc_save_v3', JSON.stringify(data));
-        loadTemplate(true);
-        showToast('📥 Design imported from file!');
-      } catch(err) {
-        showToast('⚠️ Import failed: ' + err.message, 'error');
-      }
-    };
-    reader.readAsText(file);
-  };
-  inp.click();
-}
-
-/* ════════════════════════════════════════════════════
-   INIT
-════════════════════════════════════════════════════ */
-updateCatalogueScale();
-buildGrid();
-initDrag();
-requestAnimationFrame(fitGrid);
-// Auto-restore last saved template on startup
-requestAnimationFrame(() => {
-  if (localStorage.getItem('cc_save_v3')) {
-    loadTemplate(true);
-    showToast('📥 Previous design restored!');
-  }
-});
-window.addEventListener('resize', () => {
-  updateCatalogueScale();
-  fitGrid();
-});
-</script>
-
+<script src="saba-templates.js"></script>
+<script src="saba.js"></script>
 </body>
 </html>
