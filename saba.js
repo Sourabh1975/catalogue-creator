@@ -11,6 +11,24 @@ let autosaveTimer = null;
 const pages = [];
 let currentPageIndex = 0;
 
+function applyTheme(theme) {
+  const isLight = theme === 'light';
+  document.body.classList.toggle('light-mode', isLight);
+  document.body.classList.toggle('dark-mode', !isLight);
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = isLight ? '🌙 Dark' : '☀️ Light';
+}
+
+function loadTheme() {
+  applyTheme(localStorage.getItem('saba_theme') || 'dark');
+}
+
+function toggleTheme() {
+  const next = document.body.classList.contains('light-mode') ? 'dark' : 'light';
+  localStorage.setItem('saba_theme', next);
+  applyTheme(next);
+}
+
 function layoutTokens(layout=currentLayoutType) {
   return String(layout || 'grid').split(/\s+/).filter(Boolean);
 }
@@ -37,6 +55,10 @@ function applyPageColors(colors=currentPageColors) {
     hero.style.setProperty('background-image', 'none', 'important');
     hero.style.setProperty('background-color', currentPageColors.hero, 'important');
   }
+  if (hero && (!products || products.style.display === 'none') && !currentPageColors.hero) {
+    hero.style.setProperty('background-image', 'none', 'important');
+    hero.style.setProperty('background-color', currentPageColors.page, 'important');
+  }
   if (products) products.style.setProperty('background-color', currentPageColors.products, 'important');
   const pageInput = document.getElementById('page-bg-color');
   const heroInput = document.getElementById('hero-bg-color');
@@ -49,6 +71,10 @@ function applyPageColors(colors=currentPageColors) {
 function setPageColor(target, color) {
   if (!['page','hero','products'].includes(target) || !color) return;
   currentPageColors = { ...currentPageColors, [target]: color };
+  if (target === 'page') {
+    const products = document.querySelector('.products-section');
+    if (!products || products.style.display === 'none') currentPageColors.hero = color;
+  }
   applyPageColors(currentPageColors);
   localStorage.setItem('saba_page_colors', JSON.stringify(currentPageColors));
   captureHistory();
@@ -130,6 +156,7 @@ function buildGrid(productsOverride) {
     const cVal = document.getElementById('cVal');
     if (rVal) rVal.textContent = gRows;
     if (cVal) cVal.textContent = gCols;
+    updateBuilderControls();
     return;
   }
   const hasProductOverride = Array.isArray(productsOverride);
@@ -173,6 +200,7 @@ function buildGrid(productsOverride) {
   document.getElementById('rVal').textContent = gRows;
   document.getElementById('cVal').textContent = gCols;
   syncProductImagePlaceholders(grid);
+  updateBuilderControls();
   requestAnimationFrame(fitGrid); // recalculate row heights
 }
 
@@ -272,10 +300,91 @@ function productCardHTML(i, p, layout='grid') {
 /* ════════════════════════════════════════════════════
    GRID CONTROL
 ════════════════════════════════════════════════════ */
+function updateBuilderControls() {
+  const hero = document.getElementById('hero');
+  const sec = document.querySelector('.products-section');
+  const h = hero && hero.style.display !== 'none' ? Math.round(parseFloat(hero.style.height) || hero.offsetHeight || 0) : 0;
+  const range = document.getElementById('heroHeightRange');
+  const label = document.getElementById('heroHeightVal');
+  if (range) range.value = Math.max(0, Math.min(1123, h));
+  if (label) label.textContent = h + 'px';
+  document.querySelectorAll('.builder-mode-btn').forEach(btn => btn.classList.remove('active'));
+  const activeId = (!sec || sec.style.display === 'none') ? 'mode-full' : (h <= 0 ? 'mode-products' : 'mode-mixed');
+  document.getElementById(activeId)?.classList.add('active');
+  const rVal = document.getElementById('rVal');
+  const cVal = document.getElementById('cVal');
+  if (rVal) rVal.textContent = gRows;
+  if (cVal) cVal.textContent = gCols;
+}
+
+function setHeroHeight(value) {
+  const hero = document.getElementById('hero');
+  const sec = document.querySelector('.products-section');
+  if (!hero || !sec) return;
+  const h = Math.max(0, Math.min(1123, parseInt(value, 10) || 0));
+  if (h >= 1123) {
+    currentLayoutType = 'cover';
+    gRows = 0; gCols = 0;
+    hero.style.display = '';
+    hero.style.height = '1123px';
+    sec.style.display = 'none';
+  } else {
+    currentLayoutType = 'grid';
+    if (gRows <= 0) gRows = h <= 0 ? 4 : 3;
+    if (gCols <= 0) gCols = h <= 0 ? 3 : 4;
+    hero.style.display = h <= 0 ? 'none' : '';
+    hero.style.height = h + 'px';
+    sec.style.display = '';
+    sec.style.height = (1123 - h) + 'px';
+    buildGrid();
+  }
+  applyPageColors(currentPageColors);
+  updateBuilderControls();
+  requestAnimationFrame(fitGrid);
+  captureHistory();
+}
+
+function setCatalogueSections(mode) {
+  if (mode === 'full') {
+    setHeroHeight(1123);
+    return;
+  }
+  if (mode === 'products') {
+    if (gRows <= 0) gRows = 4;
+    if (gCols <= 0) gCols = 3;
+    setHeroHeight(0);
+    return;
+  }
+  if (gRows <= 0) gRows = 3;
+  if (gCols <= 0) gCols = 4;
+  setHeroHeight(430);
+}
+
+function addProductCardSlot() {
+  const sec = document.querySelector('.products-section');
+  if (gRows <= 0 || gCols <= 0 || !sec || sec.style.display === 'none') {
+    gRows = 1;
+    gCols = 1;
+    setHeroHeight(430);
+    return;
+  }
+  if (gRows < 10) gRows += 1;
+  else if (gCols < 6) gCols += 1;
+  buildGrid();
+  updateBuilderControls();
+  captureHistory();
+}
+
 function changeGrid(axis, delta) {
+  if (gRows <= 0 && axis === 'c') gRows = 3;
+  if (gCols <= 0 && axis === 'r') gCols = 4;
+  if (currentLayoutType === 'cover') currentLayoutType = 'grid';
+  const sec = document.querySelector('.products-section');
+  if (sec && sec.style.display === 'none') setCatalogueSections('mixed');
   if (axis==='r') gRows = Math.max(1, Math.min(10, gRows+delta));
   else            gCols = Math.max(1, Math.min(6,  gCols+delta));
   buildGrid();
+  updateBuilderControls();
   requestAnimationFrame(fitGrid);
   setTimeout(() => document.getElementById('zoom-level')?.dispatchEvent(new Event('change')), 50);
 }
@@ -2135,6 +2244,7 @@ function restoreHistory(state) {
     hero.appendChild(el);
   });
   updateLayers();
+  updateBuilderControls();
   requestAnimationFrame(fitGrid);
 }
 
@@ -2753,6 +2863,7 @@ function importProductsCSV() {
    INIT — SABA full startup
 ════════════════════════════════════════════════════ */
 // Always edit mode in SABA
+loadTheme();
 document.body.classList.add('edit-mode');
 editMode = true;
 
@@ -2836,6 +2947,7 @@ function capturePageState() {
     pageColors: currentPageColors,
     heroEls,
     products,
+    heroDisplay: hero ? hero.style.display : '',
     heroHeight:  hero ? hero.style.height : '430px',
     secDisplay:  sec ? sec.style.display : '',
     secHeight:   sec ? sec.style.height : '',
@@ -2866,6 +2978,7 @@ function restorePageState(state) {
     ? (String(state.heroHeight).endsWith('px') ? String(state.heroHeight) : state.heroHeight + 'px')
     : (isCover ? '1123px' : '430px');
   if (hero) hero.style.height = heroHeight;
+  if (hero) hero.style.display = state.heroDisplay || '';
   if (sec) {
     sec.style.display = isCover ? 'none' : (state.secDisplay || '');
     if (!isCover) {

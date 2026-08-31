@@ -49,6 +49,7 @@
     <button class="tb-btn tb-export" onclick="exportDesign()" title="Export JSON">⬇ Export</button>
     <button class="tb-btn tb-import" onclick="importDesign()" title="Import JSON">⬆ Import</button>
     <button class="tb-btn tb-dl" onclick="downloadPDF()" title="Download PDF">📄 PDF</button>
+    <button class="tb-btn tb-theme" id="themeBtn" onclick="toggleTheme()" title="Switch light or dark mode">☀️ Light</button>
     <button class="tb-btn tb-refresh" onclick="hardRefreshApp()" title="Clear app cache and reload latest files">🧹 Hard Refresh</button>
     <button class="tb-btn tb-reset" onclick="resetTemplate()" title="Reset all">🔄 Reset</button>
   </div>
@@ -90,6 +91,18 @@
         <div class="ep-card">
           <div class="ep-title">⊞ Products Grid</div>
           <div class="ep-body">
+            <div class="builder-mode-row">
+              <button class="pp-btn builder-mode-btn" id="mode-full" onclick="setCatalogueSections('full')">Full Page</button>
+              <button class="pp-btn builder-mode-btn" id="mode-mixed" onclick="setCatalogueSections('mixed')">Hero + Products</button>
+              <button class="pp-btn builder-mode-btn" id="mode-products" onclick="setCatalogueSections('products')">Products Only</button>
+            </div>
+            <div class="grid-row" style="flex-direction:column;align-items:flex-start;gap:5px;margin-top:8px;">
+              <div style="display:flex;justify-content:space-between;width:100%;">
+                <span class="grid-lbl">Hero / Products Divider</span>
+                <span class="pp-range-val" id="heroHeightVal">430px</span>
+              </div>
+              <input type="range" class="pp-range" id="heroHeightRange" min="0" max="1123" value="430" style="width:100%;" oninput="setHeroHeight(this.value)">
+            </div>
             <div class="grid-row">
               <span class="grid-lbl">Rows</span>
               <div class="grid-ctrl">
@@ -106,6 +119,7 @@
                 <button class="g-btn" onclick="changeGrid('c',+1)">+</button>
               </div>
             </div>
+            <button class="saba-btn ghost full-width" onclick="addProductCardSlot()">Add Product Card</button>
           </div>
         </div>
 
