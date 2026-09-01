@@ -2242,20 +2242,17 @@ function applyTemplate(id) {
   const library = getTemplateLibrary();
   const tmpl = library.find(t => t.id === id);
   if (!tmpl) return;
-  
-  if (pages.length > 1 || document.querySelectorAll('.hero-el').length > 0) {
-    if (!confirm('Applying a new template will overwrite your current pages. Continue?')) return;
-  }
-  
-  // Clear existing pages array and load new pages
-  pages.length = 0;
+
+  if (pages.length === 0) pages.push(capturePageState());
+  pages[currentPageIndex] = capturePageState();
+
+  // Apply the selected template only to the active page so each page can use
+  // a different catalogue design in the same PDF.
   const pagesList = tmpl.pages || [tmpl];
-  pagesList.forEach(pState => {
-    pages.push(JSON.parse(JSON.stringify(pState))); 
-  });
-  
-  currentPageIndex = 0;
-  currentLayoutType = pages[0]?.layoutType || tmpl.layoutType || 'grid';
+  const templatePages = pagesList.map(pState => JSON.parse(JSON.stringify(pState)));
+  pages.splice(currentPageIndex, 1, ...templatePages);
+
+  currentLayoutType = repairLayoutType(pages[currentPageIndex]) || tmpl.layoutType || 'grid';
   restorePageState(pages[currentPageIndex]);
   renderPageTabs();
   refreshSectionResizerSoon();
