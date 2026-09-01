@@ -41,6 +41,15 @@ function layoutClass(prefix, layout=currentLayoutType) {
   return layoutTokens(layout).map(token => `${prefix}-${token}`).join(' ');
 }
 
+function repairLayoutType(state) {
+  const layout = state?.layoutType || 'grid';
+  const rows = Number(state?.gRows);
+  const cols = Number(state?.gCols);
+  const productCount = Array.isArray(state?.products) ? state.products.length : 0;
+  if (layout === 'grid' && rows === 1 && cols === 1 && productCount > 6) return 'pricelist';
+  return layout;
+}
+
 function applyPageColors(colors=currentPageColors) {
   currentPageColors = {
     page: colors?.page || DEFAULT_PAGE_COLORS.page,
@@ -243,6 +252,7 @@ function productCardHTML(i, p, layout='grid') {
 
   if (has('dealersheet')) {
     return `
+      ${productImageHTML(i, p.img, 'Image')}
       <div class="dealer-row-top">
         <div class="price-row-index">${i + 1}</div>
         <div class="prod-name" contenteditable="${editable}">${name}</div>
@@ -300,6 +310,66 @@ function productCardHTML(i, p, layout='grid') {
 /* ════════════════════════════════════════════════════
    GRID CONTROL
 ════════════════════════════════════════════════════ */
+function isSideBySideLayout(layout=currentLayoutType) {
+  return layoutHas('split', layout) || layoutHas('sidebar', layout);
+}
+
+function updateSectionResizer() {
+  const resizer = document.getElementById('section-resizer');
+  const hero = document.getElementById('hero');
+  const sec = document.querySelector('.products-section');
+  if (!resizer || !hero || !sec) return;
+  const visible = hero.style.display !== 'none' && sec.style.display !== 'none';
+  resizer.style.display = editMode && visible ? 'flex' : 'none';
+  if (!visible) return;
+  if (isSideBySideLayout()) {
+    const w = hero.offsetWidth || parseFloat(hero.style.width) || 397;
+    resizer.style.right = 'auto';
+    resizer.style.bottom = '0';
+    resizer.style.width = '14px';
+    resizer.style.height = 'auto';
+    resizer.style.marginTop = '0';
+    resizer.style.marginLeft = '-7px';
+    resizer.style.left = w + 'px';
+    resizer.style.top = '0';
+  } else {
+    const h = hero.offsetHeight || parseFloat(hero.style.height) || 430;
+    resizer.style.right = '0';
+    resizer.style.bottom = 'auto';
+    resizer.style.width = 'auto';
+    resizer.style.height = '14px';
+    resizer.style.marginTop = '-7px';
+    resizer.style.marginLeft = '0';
+    resizer.style.top = h + 'px';
+    resizer.style.left = '0';
+  }
+}
+
+function refreshSectionResizerSoon() {
+  updateSectionResizer();
+  requestAnimationFrame(() => {
+    updateSectionResizer();
+    requestAnimationFrame(updateSectionResizer);
+  });
+}
+
+function setSectionWidths(heroWidth, record=true) {
+  const hero = document.getElementById('hero');
+  const sec = document.querySelector('.products-section');
+  if (!hero || !sec) return;
+  const w = Math.max(120, Math.min(674, parseInt(heroWidth, 10) || 397));
+  hero.style.display = '';
+  sec.style.display = '';
+  hero.style.setProperty('width', w + 'px', 'important');
+  sec.style.setProperty('width', (794 - w) + 'px', 'important');
+  hero.style.setProperty('height', '1123px', 'important');
+  sec.style.setProperty('height', '1123px', 'important');
+  updateSectionResizer();
+  requestAnimationFrame(fitGrid);
+  scheduleAutosave();
+  if (record) captureHistory();
+}
+
 function updateBuilderControls() {
   const hero = document.getElementById('hero');
   const sec = document.querySelector('.products-section');
@@ -315,9 +385,10 @@ function updateBuilderControls() {
   const cVal = document.getElementById('cVal');
   if (rVal) rVal.textContent = gRows;
   if (cVal) cVal.textContent = gCols;
+  updateSectionResizer();
 }
 
-function setHeroHeight(value) {
+function setHeroHeight(value, record=true) {
   const hero = document.getElementById('hero');
   const sec = document.querySelector('.products-section');
   if (!hero || !sec) return;
@@ -326,22 +397,27 @@ function setHeroHeight(value) {
     currentLayoutType = 'cover';
     gRows = 0; gCols = 0;
     hero.style.display = '';
-    hero.style.height = '1123px';
+    hero.style.removeProperty('width');
+    sec.style.removeProperty('width');
+    hero.style.setProperty('height', '1123px', 'important');
     sec.style.display = 'none';
   } else {
-    currentLayoutType = 'grid';
+    if (layoutHas('cover')) currentLayoutType = 'grid';
     if (gRows <= 0) gRows = h <= 0 ? 4 : 3;
     if (gCols <= 0) gCols = h <= 0 ? 3 : 4;
     hero.style.display = h <= 0 ? 'none' : '';
-    hero.style.height = h + 'px';
+    hero.style.removeProperty('width');
+    sec.style.removeProperty('width');
+    hero.style.setProperty('height', h + 'px', 'important');
     sec.style.display = '';
-    sec.style.height = (1123 - h) + 'px';
+    sec.style.setProperty('height', (1123 - h) + 'px', 'important');
     buildGrid();
   }
   applyPageColors(currentPageColors);
   updateBuilderControls();
   requestAnimationFrame(fitGrid);
-  captureHistory();
+  scheduleAutosave();
+  if (record) captureHistory();
 }
 
 function setCatalogueSections(mode) {
@@ -350,11 +426,13 @@ function setCatalogueSections(mode) {
     return;
   }
   if (mode === 'products') {
+    if (layoutHas('cover')) currentLayoutType = 'grid';
     if (gRows <= 0) gRows = 4;
     if (gCols <= 0) gCols = 3;
     setHeroHeight(0);
     return;
   }
+  if (layoutHas('cover')) currentLayoutType = 'grid';
   if (gRows <= 0) gRows = 3;
   if (gCols <= 0) gCols = 4;
   setHeroHeight(430);
@@ -363,6 +441,7 @@ function setCatalogueSections(mode) {
 function addProductCardSlot() {
   const sec = document.querySelector('.products-section');
   if (gRows <= 0 || gCols <= 0 || !sec || sec.style.display === 'none') {
+    if (layoutHas('cover')) currentLayoutType = 'grid';
     gRows = 1;
     gCols = 1;
     setHeroHeight(430);
@@ -378,7 +457,7 @@ function addProductCardSlot() {
 function changeGrid(axis, delta) {
   if (gRows <= 0 && axis === 'c') gRows = 3;
   if (gCols <= 0 && axis === 'r') gCols = 4;
-  if (currentLayoutType === 'cover') currentLayoutType = 'grid';
+  if (layoutHas('cover')) currentLayoutType = 'grid';
   const sec = document.querySelector('.products-section');
   if (sec && sec.style.display === 'none') setCatalogueSections('mixed');
   if (axis==='r') gRows = Math.max(1, Math.min(10, gRows+delta));
@@ -387,6 +466,44 @@ function changeGrid(axis, delta) {
   updateBuilderControls();
   requestAnimationFrame(fitGrid);
   setTimeout(() => document.getElementById('zoom-level')?.dispatchEvent(new Event('change')), 50);
+}
+
+function initSectionResizer() {
+  const resizer = document.getElementById('section-resizer');
+  const cat = document.getElementById('catalogue');
+  if (!resizer || !cat) return;
+  let resizing = false;
+
+  resizer.addEventListener('pointerdown', e => {
+    if (!editMode) return;
+    resizing = true;
+    resizer.classList.add('dragging');
+    resizer.setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+  });
+
+  resizer.addEventListener('pointermove', e => {
+    if (!resizing) return;
+    const rect = cat.getBoundingClientRect();
+    const scale = getCatalogueScale();
+    if (isSideBySideLayout()) {
+      const x = (e.clientX - rect.left) / scale;
+      setSectionWidths(x, false);
+    } else {
+      const y = (e.clientY - rect.top) / scale;
+      setHeroHeight(Math.max(80, Math.min(1040, y)), false);
+    }
+  });
+
+  const stop = e => {
+    if (!resizing) return;
+    resizing = false;
+    resizer.classList.remove('dragging');
+    resizer.releasePointerCapture?.(e.pointerId);
+    captureHistory();
+  };
+  resizer.addEventListener('pointerup', stop);
+  resizer.addEventListener('pointercancel', stop);
 }
 
 /* ════════════════════════════════════════════════════
@@ -1207,6 +1324,7 @@ function toggleEdit() {
     hint.textContent='OFF'; hint.style.color='';
     document.querySelectorAll('.hero-el.active-el').forEach(el => el.classList.remove('active-el'));
   }
+  updateSectionResizer();
 }
 
 /* ════════════════════════════════════════════════════
@@ -1392,7 +1510,8 @@ function fitGrid() {
     grid.style.gridTemplateRows = '';
     return;
   }
-  if (layoutHas('pricelist') || layoutHas('comparison') || layoutHas('masonry')) {
+  const freeFlowMasonry = layoutHas('masonry') && !layoutHas('sidebar');
+  if (layoutHas('pricelist') || layoutHas('comparison') || freeFlowMasonry) {
     grid.style.gridTemplateRows = '';
     document.documentElement.style.setProperty('--card-scale', '1');
     return;
@@ -2139,6 +2258,7 @@ function applyTemplate(id) {
   currentLayoutType = pages[0]?.layoutType || tmpl.layoutType || 'grid';
   restorePageState(pages[currentPageIndex]);
   renderPageTabs();
+  refreshSectionResizerSoon();
   
   closeTemplateBrowser();
   updateLayers();
@@ -2876,6 +2996,7 @@ updateCatalogueScale();
 loadPageColors();
 buildGrid();
 initDrag();
+initSectionResizer();
 setupCanvasDrops();
 requestAnimationFrame(fitGrid);
 
@@ -2898,6 +3019,7 @@ if (!hadSavedDesign) requestAnimationFrame(() => showPicker());
 window.addEventListener('resize', () => {
   updateCatalogueScale();
   fitGrid();
+  refreshSectionResizerSoon();
 });
 
 // Capture history after drag ends
@@ -2949,8 +3071,10 @@ function capturePageState() {
     products,
     heroDisplay: hero ? hero.style.display : '',
     heroHeight:  hero ? hero.style.height : '430px',
+    heroWidth:   hero ? hero.style.width : '',
     secDisplay:  sec ? sec.style.display : '',
     secHeight:   sec ? sec.style.height : '',
+    secWidth:    sec ? sec.style.width : '',
     heroBg:      heroBgWrap?.style.backgroundImage || '',
     heroBgSize:  heroBgWrap?.style.backgroundSize  || '',
     heroBgPos:   heroBgWrap?.style.backgroundPosition || '',
@@ -2967,23 +3091,32 @@ function restorePageState(state) {
   // Grid
   gRows = Number.isFinite(Number(state.gRows)) ? Number(state.gRows) : 3;
   gCols = Number.isFinite(Number(state.gCols)) ? Number(state.gCols) : 4;
-  currentLayoutType = state.layoutType || 'grid';
+  currentLayoutType = repairLayoutType(state);
   applyPageColors(state.pageColors || DEFAULT_PAGE_COLORS);
   buildGrid(state.products);
   // Hero and Sec Heights
   const hero = document.getElementById('hero');
   const sec = document.querySelector('.products-section');
-  const isCover = layoutHas('cover', state.layoutType) || gRows <= 0 || gCols <= 0;
+  const isCover = layoutHas('cover', currentLayoutType) || gRows <= 0 || gCols <= 0;
   const heroHeight = state.heroHeight
     ? (String(state.heroHeight).endsWith('px') ? String(state.heroHeight) : state.heroHeight + 'px')
     : (isCover ? '1123px' : '430px');
-  if (hero) hero.style.height = heroHeight;
+  const sideLayout = isSideBySideLayout(currentLayoutType);
+  const appliedHeroHeight = sideLayout ? '1123px' : heroHeight;
+  if (hero) hero.style.setProperty('height', appliedHeroHeight, 'important');
   if (hero) hero.style.display = state.heroDisplay || '';
+  if (hero) {
+    if (sideLayout && state.heroWidth) hero.style.setProperty('width', state.heroWidth, 'important');
+    if (!sideLayout) hero.style.removeProperty('width');
+  }
   if (sec) {
     sec.style.display = isCover ? 'none' : (state.secDisplay || '');
     if (!isCover) {
       const heroPx = parseFloat(heroHeight) || 430;
-      sec.style.height = state.secHeight || `calc(1123px - ${heroPx}px)`;
+      const secHeight = sideLayout ? '1123px' : (state.secHeight || `calc(1123px - ${heroPx}px)`);
+      sec.style.setProperty('height', secHeight, 'important');
+      if (sideLayout && state.secWidth) sec.style.setProperty('width', state.secWidth, 'important');
+      if (!sideLayout) sec.style.removeProperty('width');
     }
   }
   // Hero BG
@@ -3037,7 +3170,11 @@ function restorePageState(state) {
   // Card styles
   if (state.cardStyles) applyCardStyles(state.cardStyles);
   updateLayers();
-  requestAnimationFrame(fitGrid);
+  updateBuilderControls();
+  requestAnimationFrame(() => {
+    fitGrid();
+    refreshSectionResizerSoon();
+  });
 }
 
 // Add a new page
