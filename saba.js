@@ -15,8 +15,9 @@ function applyTheme(theme) {
   const isLight = theme === 'light';
   document.body.classList.toggle('light-mode', isLight);
   document.body.classList.toggle('dark-mode', !isLight);
-  const btn = document.getElementById('themeBtn');
-  if (btn) btn.textContent = isLight ? '🌙 Dark' : '☀️ Light';
+  document.querySelectorAll('.tb-theme').forEach(btn => {
+    btn.textContent = isLight ? '🌙 Dark' : '☀️ Light';
+  });
 }
 
 function loadTheme() {
